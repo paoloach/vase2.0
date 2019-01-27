@@ -8,7 +8,12 @@
 
 #include "esp8266.h"
 
-void sntpTask(void *pvParameters);
+enum OverWriteLight {
+    NONE,
+    ON_LIGHT,
+    OFF_LIGHT
+};
+
 struct TimeLed {
     int8_t  hour;
     int8_t  minute;
@@ -20,8 +25,10 @@ struct PeriodLed {
 };
 
 extern struct PeriodLed periodLed;
-extern bool wifiOn;
+extern bool lightOn;
+extern enum OverWriteLight overWriteLight;
 
+void sntpTask(void *pvParameters);
 void initIO();
 void onLight();
 void offLight();

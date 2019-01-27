@@ -24,6 +24,7 @@ void wifiTask(void *args) {
         switch (sdk_wifi_station_get_connect_status()) {
             case STATION_GOT_IP:
                 ledStatus = true;
+                wifiOn=true;
                 break;
             case STATION_CONNECTING:
                 counter--;
@@ -31,9 +32,11 @@ void wifiTask(void *args) {
                     counter = 5;
                     ledStatus = !ledStatus;
                 }
+                wifiOn=false;
                 break;
             default:
                 ledStatus = !ledStatus;
+                wifiOn=false;
                 break;
         }
         gpio_write(WIFI_LED, ledStatus);

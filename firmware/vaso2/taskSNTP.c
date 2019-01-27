@@ -19,11 +19,13 @@
 #include <ssid_config.h>
 
 
+
 /* Add extras/sntp component to makefile for this include to work */
 #include <sntp.h>
 #include <time.h>
 #include "Pins.h"
 #include "taskSNTP.h"
+#include "WifiTask.h"
 
 #define SNTP_SERVERS    "0.pool.ntp.org", "1.pool.ntp.org", \
                                                 "2.pool.ntp.org", "3.pool.ntp.org"
@@ -31,17 +33,22 @@
 #define vTaskDelayMs(ms)        vTaskDelay((ms)/portTICK_PERIOD_MS)
 #define UNUSED_ARG(x)   (void)x
 
-bool wifiOn;
 struct PeriodLed periodLed;
 static struct tm *localTime;
 
 static bool isOn(void);
+bool lightOn=false;
+enum OverWriteLight overWriteLight;
 
 void sntpTask(void *pvParameters)
 {
     char *servers[] = {SNTP_SERVERS};
     UNUSED_ARG(pvParameters);
 
+    periodLed.start.hour=8;
+    periodLed.start.minute=0;
+    periodLed.end.hour=22;
+    periodLed.end.minute=0;
 
 
     /* Wait until we have joined AP and are assigned an IP */
@@ -65,16 +72,34 @@ void sntpTask(void *pvParameters)
     while(1) {
         vTaskDelayMs(5000);
         if (isOn()){
-            onLight();
+            switch(overWriteLight){
+                case NONE:
+                    onLight();
+                    break;
+                case ON_LIGHT:
+                    onLight();
+                    overWriteLight = NONE;
+                    break;
+                default:;
+            }
         } else {
-            offLight();
+            switch(overWriteLight){
+                case NONE:
+                    offLight();
+                    break;
+                case OFF_LIGHT:
+                    offLight();
+                    overWriteLight = NONE;
+                    break;
+                default:;
+            }
         }
     }
 }
 
 static bool isOn(void) {
     time_t ts = time(NULL);
-    localTime = localtime(ts);
+    localTime = localtime(&ts);
     if (localTime->tm_hour < periodLed.start.hour)
         return false;
     if (localTime->tm_hour == periodLed.start.hour && localTime->tm_min < periodLed.start.minute)
@@ -98,9 +123,11 @@ void onLight(){
     printf("LED On\n");
     gpio_write(LED_PIN, true);
     gpio_write(14, true);
+    lightOn=true;
 }
 void offLight() {
     printf("LED Off\n");
     gpio_write(LED_PIN, false);
     gpio_write(14, false);
+    lightOn=false;
 }
