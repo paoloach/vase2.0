@@ -9,6 +9,8 @@
 #include <FreeRTOS.h>
 #include <ssid_config.h>
 #include <task.h>
+#include <sysparam.h>
+
 
 #include "taskSNTP.h"
 #include "WifiTask.h"

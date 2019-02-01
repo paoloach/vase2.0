@@ -17,6 +17,7 @@
 #include <lwip/dns.h>
 
 #include <ssid_config.h>
+#include "espressif/spi_flash.h"
 
 
 
@@ -38,7 +39,65 @@ static struct tm *localTime;
 
 static bool isOn(void);
 bool lightOn=false;
+#ifndef SNTP_IMPL_STEP_THRESHOLD
+#define SNTP_IMPL_STEP_THRESHOLD 125000
+#endif
+
+
+#define TV2LD(TV) ((long double)TV.tv_sec + (long double)TV.tv_usec * 1.e-6)
+#include <stdio.h>
+
+
+
 enum OverWriteLight overWriteLight;
+uint8_t buffer[10];
+
+
+
+/*
+ * Called by lwip/apps/sntp.c through
+ * #define SNTP_SET_SYSTEM_TIME_US(S, F) sntp_impl_set_system_time_us(S, F)
+ * u32_t matches lwip/apps/sntp.c
+ */
+void sntp_impl_set_system_time_us(uint32_t secs, uint32_t us) {
+
+    struct timeval new;
+    struct timeval old;
+    struct timeval dt;
+
+#ifdef TIMEKEEPING_SET_AND_MEASURE_ONLY
+    static long double time_has_been_set_at;
+#endif
+
+    gettimeofday(&old, NULL);
+
+    new.tv_sec = secs;
+    new.tv_usec = us;
+
+    timersub(&new, &old, &dt);
+
+#ifdef TIMEKEEPING_SET_AND_MEASURE_ONLY
+
+    if (time_has_been_set_at == 0) {
+        settimeofday(&new, NULL);
+        time_has_been_set_at = TV2LD(new);
+    }
+
+    printf("SNTP:  %20.6Lf    delta: %10.3Lf ms %3.1Lf ppm\n", TV2LD(new), TV2LD(dt)*1e3, (TV2LD(dt) / (TV2LD(new) - time_has_been_set_at))*1e6);
+
+#else /* Normal operation */
+
+    if (secs || abs(us) > SNTP_IMPL_STEP_THRESHOLD) {
+        settimeofday(&new, NULL);
+    } else {
+        adjtime(&dt, NULL);
+    }
+
+    printf("SNTP:  %20.6Lf    delta: %7.3Lf ms\n", TV2LD(new), TV2LD(dt)*1e3);
+
+#endif
+}
+
 
 void sntpTask(void *pvParameters)
 {
@@ -56,10 +115,22 @@ void sntpTask(void *pvParameters)
         vTaskDelay(100/portTICK_PERIOD_MS);
     }
 
+    printf("Buffer: ");
+
+    sdk_spi_flash_read(0xFE000,buffer, 10 );
+    for(int i=0; i < 10; i++)
+        printf("%02X", buffer[i]);
+    printf("\n");
+
+    sdk_spi_flash_erase_sector(0xFE);
+
+    strcpy(buffer, "CIAO ");
+    uint8_t val = sdk_spi_flash_write(0xFE000, buffer, 10);
+    printf("write result: %d\n", val);
 
     /* Start SNTP */
     printf("Starting SNTP... ");
-    sntp_set_update_delay(24*60*60*1000);
+    sntp_set_update_delay(60*60*1000);
     /* Set GMT+1 zone, daylight savings off */
     const struct timezone tz = {1*60, 0};
     /* SNTP initialization */
@@ -98,8 +169,10 @@ void sntpTask(void *pvParameters)
 }
 
 static bool isOn(void) {
-    time_t ts = time(NULL);
-    localTime = localtime(&ts);
+    struct timeval timeVal;
+    gettimeofday(&timeVal, NULL);
+
+    localTime = localtime(&timeVal.tv_sec);
     if (localTime->tm_hour < periodLed.start.hour)
         return false;
     if (localTime->tm_hour == periodLed.start.hour && localTime->tm_min < periodLed.start.minute)

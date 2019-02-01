@@ -27,7 +27,7 @@ SET(COMMON_FLAGS -mlongcalls -mtext-section-literals -DGITSHORTREV=\"93d43d7\" -
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 SET(CMAKE_C_FLAGS "-std=gnu99")
 
-set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h)
+set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c)
 
 set(ESP_OPEN_RTOS_DIR /home/paolo/esp2866/esp-open-rtos)
 set(BOOT_FIRMWARE ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/rboot.bin)
@@ -290,6 +290,7 @@ add_custom_command(TARGET flash
         -ff ${FLASH_SPEED}m
         0x0 ${BOOT_FIRMWARE}
         0x1000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFE000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0x2000 vaso2.bin
 
         )
@@ -300,7 +301,7 @@ add_dependencies(createImage vaso2)
 add_dependencies(flash createImage)
 
 
-SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-check-sections  -u call_user_start -Wl,-static -Wl,-Map=./vaso2.map  -Wl,-gc-sections -T${ESP_OPEN_RTOS_DIR}/ld/program.ld -T${ESP_OPEN_RTOS_DIR}/ld/rom.ld ")
+SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-check-sections  -u call_user_start -Wl,-static -Wl,-Map=./vaso2.map  -Wl,-gc-sections -T../program.ld -T${ESP_OPEN_RTOS_DIR}/ld/rom.ld ")
 
 if (PRINTF_SCANF_FLOAT_SUPPORT)
     SET(CMAKE_EXE_LINKER_FLAGS, "-u _printf_float -u _scanf_float")
@@ -319,11 +320,8 @@ target_link_libraries(vaso2
         open_esplibs_phy
         open_esplibs_pp
         open_esplibs_wpa
-
-
         freeRTOS
         lwip
-
         libesphttpd pwm sntp
         ${CMAKE_CURRENT_BINARY_DIR}/sdklib/libmain.a
         ${CMAKE_CURRENT_BINARY_DIR}/sdklib/libnet80211.a

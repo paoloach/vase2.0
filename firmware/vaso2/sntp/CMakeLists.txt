@@ -8,7 +8,7 @@ file(GLOB LIB_sntp_SRC ${ESP_OPEN_RTOS_DIR}/extras/sntp/*.c)
 
 add_library(sntp STATIC ${LIB_sntp_SRC})
 
-target_compile_options(sntp PUBLIC ${COMMON_FLAGS} )
+target_compile_options(sntp PUBLIC ${COMMON_FLAGS} -DLWIP_DEBUG=1 "-DSNTP_SET_SYSTEM_TIME_US(S, F)=sntp_impl_set_system_time_us(S, F)" )
 
 target_include_directories(sntp PUBLIC
             ${ESP_OPEN_RTOS_DIR}/extras/sntp
