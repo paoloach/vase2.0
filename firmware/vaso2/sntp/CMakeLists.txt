@@ -4,7 +4,10 @@ project(vaso2)
 
 set(CMAKE_CXX_STANDARD 11)
 
-file(GLOB LIB_sntp_SRC ${ESP_OPEN_RTOS_DIR}/extras/sntp/*.c)
+file(GLOB LIB_sntp_SRC
+        ${ESP_OPEN_RTOS_DIR}/extras/sntp/sntp.c
+        ${ESP_OPEN_RTOS_DIR}/extras/sntp/sntp.h
+        ${ESP_OPEN_RTOS_DIR}/extras/sntp/sntp_fun.c)
 
 add_library(sntp STATIC ${LIB_sntp_SRC})
 

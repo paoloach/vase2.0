@@ -27,7 +27,7 @@ SET(COMMON_FLAGS -mlongcalls -mtext-section-literals -DGITSHORTREV=\"93d43d7\" -
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 SET(CMAKE_C_FLAGS "-std=gnu99")
 
-set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c)
+set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c taskDHT22.c)
 
 set(ESP_OPEN_RTOS_DIR /home/paolo/esp2866/esp-open-rtos)
 set(BOOT_FIRMWARE ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/rboot.bin)
@@ -39,6 +39,7 @@ set(OPEN_ESPLISBS ${ESP_OPEN_RTOS_DIR}/open_esplibs)
 add_subdirectory(libesphttpd)
 add_subdirectory(pwm)
 add_subdirectory(sntp)
+add_subdirectory(dht)
 
 SET(LIB_MAIN_SOURCES
         ${ESP_OPEN_RTOS_DIR}/open_esplibs/libmain/user_interface.c
@@ -322,7 +323,7 @@ target_link_libraries(vaso2
         open_esplibs_wpa
         freeRTOS
         lwip
-        libesphttpd pwm sntp
+        libesphttpd pwm sntp dht
         ${CMAKE_CURRENT_BINARY_DIR}/sdklib/libmain.a
         ${CMAKE_CURRENT_BINARY_DIR}/sdklib/libnet80211.a
         ${CMAKE_CURRENT_BINARY_DIR}/sdklib/libphy.a
@@ -486,6 +487,7 @@ target_include_directories(program PUBLIC
         ${ESP_OPEN_RTOS_DIR}/extras/libesphttpd/libesphttpd/espfs
         ${ESP_OPEN_RTOS_DIR}/extras/libesphttpd/libesphttpd/lib/heatshrink
         ${ESP_OPEN_RTOS_DIR}/extras
+        ${ESP_OPEN_RTOS_DIR}/extras/dht
         ${ESP_OPEN_RTOS_DIR}/include
         ${ESP_OPEN_RTOS_DIR}/libc/xtensa-lx106-elf/include
         ${FREE_RTOS}/include

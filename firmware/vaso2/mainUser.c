@@ -14,6 +14,7 @@
 
 #include "taskSNTP.h"
 #include "WifiTask.h"
+#include "taskDHT22.h"
 
 #define OFF (const void *)0
 #define ON (const void *)1
@@ -23,6 +24,7 @@
 static struct TimeLed decodeTime(char * data);
 static void sendChar(char * buffer,  int8_t c);
 static void sendTimeLed(HttpdConnData * connData,  struct TimeLed * timeLed);
+static int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *, uint16_t);
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
@@ -98,6 +100,35 @@ int ICACHE_FLASH_ATTR onOff(HttpdConnData *connData) {
     }
     httpdStartResponse(connData, 201);
     httpdEndHeaders(connData);
+    return HTTPD_CGI_DONE;
+}
+
+
+int ICACHE_FLASH_ATTR httpTemperature(HttpdConnData *connData) {
+    return commonGet(connData, "temperature", temperature);
+}
+
+int ICACHE_FLASH_ATTR httpHumidity(HttpdConnData *connData) {
+    return commonGet(connData, "humidity", humidity);
+}
+
+int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char * field, uint16_t value) {
+    char buffer[10];
+    if (connData->conn == NULL) {
+        return HTTPD_CGI_DONE;
+    }
+    if (connData->requestType != HTTPD_METHOD_GET) {
+        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
+        httpdEndHeaders(connData);
+        return HTTPD_CGI_DONE;
+    }
+    httpdStartResponse(connData, 200);
+    httpdHeader(connData, "Content-Type", "text/plain");
+    httpdEndHeaders(connData);
+
+    httpdSend(connData, field, -1);
+    sprintf(buffer, ": %d\n", value);
+    httpdSend(connData, buffer, -1);
     return HTTPD_CGI_DONE;
 }
 
@@ -189,6 +220,8 @@ HttpdBuiltInUrl builtInUrls[] = {
     {"/status",      getStatus, NULL},
     {"/onTime",      startEndTime,     START_TIME},
     {"/offTime",     startEndTime,     END_TIME},
+    {"/temperature",     httpTemperature,     NULL},
+    {"/humidity",     httpHumidity,     NULL},
 };
 
 void user_init(void) {
@@ -212,5 +245,6 @@ void user_init(void) {
     httpdInit(builtInUrls, 80);
     xTaskCreate(sntpTask, "SNTP", 1024, NULL, 1, NULL);
     xTaskCreate(wifiTask, "wifiTask", 512, NULL, 1, NULL);
+    xTaskCreate(dht22Task, "dht22Task", 512, NULL, 1, NULL);
 
 }

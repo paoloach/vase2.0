@@ -2,28 +2,14 @@
 // Created by paolo on 14/01/19.
 //
 #include <espressif/esp_common.h>
-#include <esp/uart.h>
-
-#include <string.h>
-#include <stdio.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
-
-#include <lwip/err.h>
-#include <lwip/sockets.h>
-#include <lwip/sys.h>
-#include <lwip/netdb.h>
-#include <lwip/dns.h>
-
-#include <ssid_config.h>
-#include "espressif/spi_flash.h"
 
 
 
 /* Add extras/sntp component to makefile for this include to work */
 #include <sntp.h>
-#include <time.h>
 #include "Pins.h"
 #include "taskSNTP.h"
 #include "WifiTask.h"
@@ -45,13 +31,8 @@ bool lightOn=false;
 
 
 #define TV2LD(TV) ((long double)TV.tv_sec + (long double)TV.tv_usec * 1.e-6)
-#include <stdio.h>
-
-
 
 enum OverWriteLight overWriteLight;
-uint8_t buffer[10];
-
 
 
 /*
@@ -93,7 +74,7 @@ void sntp_impl_set_system_time_us(uint32_t secs, uint32_t us) {
         adjtime(&dt, NULL);
     }
 
-    printf("SNTP:  %20.6Lf    delta: %7.3Lf ms\n", TV2LD(new), TV2LD(dt)*1e3);
+    printf("SNTP:  %d    delta: %d ms\n", new.tv_sec, dt.tv_sec*1000);
 
 #endif
 }
@@ -104,9 +85,9 @@ void sntpTask(void *pvParameters)
     char *servers[] = {SNTP_SERVERS};
     UNUSED_ARG(pvParameters);
 
-    periodLed.start.hour=8;
-    periodLed.start.minute=0;
-    periodLed.end.hour=22;
+    periodLed.start.hour=6;
+    periodLed.start.minute=30;
+    periodLed.end.hour=21;
     periodLed.end.minute=0;
 
 
@@ -115,18 +96,6 @@ void sntpTask(void *pvParameters)
         vTaskDelay(100/portTICK_PERIOD_MS);
     }
 
-    printf("Buffer: ");
-
-    sdk_spi_flash_read(0xFE000,buffer, 10 );
-    for(int i=0; i < 10; i++)
-        printf("%02X", buffer[i]);
-    printf("\n");
-
-    sdk_spi_flash_erase_sector(0xFE);
-
-    strcpy(buffer, "CIAO ");
-    uint8_t val = sdk_spi_flash_write(0xFE000, buffer, 10);
-    printf("write result: %d\n", val);
 
     /* Start SNTP */
     printf("Starting SNTP... ");
@@ -141,7 +110,6 @@ void sntpTask(void *pvParameters)
 
     /* Print date and time each 5 seconds */
     while(1) {
-        vTaskDelayMs(5000);
         if (isOn()){
             switch(overWriteLight){
                 case NONE:
@@ -165,6 +133,7 @@ void sntpTask(void *pvParameters)
                 default:;
             }
         }
+        vTaskDelayMs(20000);
     }
 }
 
@@ -186,21 +155,17 @@ static bool isOn(void) {
 
 void initIO() {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
     gpio_enable(LED_PIN, GPIO_OUTPUT);
-    gpio_enable(14, GPIO_OUTPUT);
     offLight();
 }
 
 void onLight(){
     printf("LED On\n");
     gpio_write(LED_PIN, true);
-    gpio_write(14, true);
     lightOn=true;
 }
 void offLight() {
     printf("LED Off\n");
     gpio_write(LED_PIN, false);
-    gpio_write(14, false);
     lightOn=false;
 }
