@@ -10,7 +10,7 @@ MEMORY
 
   - Length is max 8Mbit of mappable flash, minus start offset
 */
-  irom0_0_seg :                       	org = 0x40202010, len = (1M - 0x2010-0x2000)
+  irom0_0_seg :                       	org = 0x40202010, len = (1M - 0x2010-0x10000)
 }
 
 /* FreeRTOS memory management functions

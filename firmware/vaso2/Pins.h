@@ -7,7 +7,7 @@
 
 #define LED_PIN 5
 #define WIFI_LED 4
-#define DHT22_LED 14
+#define DHT112_LED 14
 
 
 #endif //VASO2_PINS_H

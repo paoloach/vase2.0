@@ -27,7 +27,7 @@ SET(COMMON_FLAGS -mlongcalls -mtext-section-literals -DGITSHORTREV=\"93d43d7\" -
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 SET(CMAKE_C_FLAGS "-std=gnu99")
 
-set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c taskDHT22.c)
+set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c taskDHT112.c)
 
 set(ESP_OPEN_RTOS_DIR /home/paolo/esp2866/esp-open-rtos)
 set(BOOT_FIRMWARE ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/rboot.bin)
@@ -290,8 +290,23 @@ add_custom_command(TARGET flash
         -fm ${FLASH_MODE}
         -ff ${FLASH_SPEED}m
         0x0 ${BOOT_FIRMWARE}
-        0x1000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0x01000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF0000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF1000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF2000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF3000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF4000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF5000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF6000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF7000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF8000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xF9000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFA000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFB000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFC000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFD000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0xFE000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+        0xFF000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0x2000 vaso2.bin
 
         )

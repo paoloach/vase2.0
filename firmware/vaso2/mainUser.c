@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <time.h>
 #include <libesphttpd/platform.h>
 #include <espressif/esp_common.h>
@@ -9,22 +8,24 @@
 #include <FreeRTOS.h>
 #include <ssid_config.h>
 #include <task.h>
-#include <sysparam.h>
 
 
 #include "taskSNTP.h"
 #include "WifiTask.h"
-#include "taskDHT22.h"
+#include "taskDHT112.h"
 
 #define OFF (const void *)0
 #define ON (const void *)1
 #define START_TIME (const void *)0
 #define END_TIME (const void *)1
 
-static struct TimeLed decodeTime(char * data);
-static void sendChar(char * buffer,  int8_t c);
-static void sendTimeLed(HttpdConnData * connData,  struct TimeLed * timeLed);
-static int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *, uint16_t);
+static struct TimeLed decodeTime(char *data);
+
+static void sendChar(char *buffer, int8_t c);
+
+static void sendTimeLed(HttpdConnData *connData, struct TimeLed *timeLed);
+
+static int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *, int16_t);
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
@@ -70,13 +71,13 @@ int ICACHE_FLASH_ATTR getStatus(HttpdConnData *connData) {
     httpdSend(connData, "\nend: ", 6);
     sendTimeLed(connData, &periodLed.end);
     time_t ts = time(NULL);
-    struct tm * localTime = localtime(&ts);
+    struct tm *localTime = localtime(&ts);
     struct TimeLed tl;
     tl.hour = localTime->tm_hour;
     tl.minute = localTime->tm_min;
-    httpdSend(connData, "\ntime: ",7);
+    httpdSend(connData, "\ntime: ", 7);
     sendTimeLed(connData, &tl);
-    httpdSend(connData, "\n",1);
+    httpdSend(connData, "\n", 1);
     return HTTPD_CGI_DONE;
 }
 
@@ -104,6 +105,44 @@ int ICACHE_FLASH_ATTR onOff(HttpdConnData *connData) {
 }
 
 
+int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
+    char buffer[30];
+    if (connData->conn == NULL) {
+        return HTTPD_CGI_DONE;
+    }
+    if (connData->requestType != HTTPD_METHOD_GET) {
+        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
+        httpdEndHeaders(connData);
+        return HTTPD_CGI_DONE;
+    }
+    httpdStartResponse(connData, 200);
+    httpdHeader(connData, "Content-Type", "text/plain");
+    httpdEndHeaders(connData);
+
+    uint16_t tot = 50;
+    uint16_t newerSector = getLastSector();
+    struct DataSample *dataSamples = getSamples(newerSector);
+    uint16_t lastSample = getLastSample();
+    struct DataSample *iter = dataSamples + lastSample;
+    struct DataSample *end = iter + (lastSample > 50 ? 50 : lastSample);
+    for (; iter != end; iter--) {
+        int16_t value = temperature ? iter->temperature : iter->humidity;
+        sprintf(buffer, "%lld %d\n", iter->timestamp, value);
+        tot--;
+        httpdSend(connData, buffer, -1);
+    }
+    return HTTPD_CGI_DONE;
+}
+
+int ICACHE_FLASH_ATTR httpTemperatures(HttpdConnData *connData) {
+    return httpData(connData, true);
+}
+
+int ICACHE_FLASH_ATTR httpHumidities(HttpdConnData *connData) {
+    return httpData(connData, true);
+}
+
+
 int ICACHE_FLASH_ATTR httpTemperature(HttpdConnData *connData) {
     return commonGet(connData, "temperature", temperature);
 }
@@ -112,7 +151,7 @@ int ICACHE_FLASH_ATTR httpHumidity(HttpdConnData *connData) {
     return commonGet(connData, "humidity", humidity);
 }
 
-int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char * field, uint16_t value) {
+int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *field, int16_t value) {
     char buffer[10];
     if (connData->conn == NULL) {
         return HTTPD_CGI_DONE;
@@ -133,7 +172,6 @@ int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char * field, uin
 }
 
 
-
 int ICACHE_FLASH_ATTR startEndTime(HttpdConnData *connData) {
     if (connData->conn == NULL) {
         //Connection aborted. Clean up.
@@ -148,7 +186,7 @@ int ICACHE_FLASH_ATTR startEndTime(HttpdConnData *connData) {
     if (connData->post != NULL) {
         printf("Post data: %s\n", connData->post->buff);
         struct TimeLed startTime = decodeTime(connData->post->buff);
-        if (startTime.minute != -1){
+        if (startTime.minute != -1) {
             if (connData->cgiArg == START_TIME)
                 periodLed.start = startTime;
             else
@@ -165,63 +203,65 @@ int ICACHE_FLASH_ATTR startEndTime(HttpdConnData *connData) {
     return HTTPD_CGI_DONE;
 }
 
-static void sendTimeLed(HttpdConnData * connData,  struct TimeLed * timeLed) {
+static void sendTimeLed(HttpdConnData *connData, struct TimeLed *timeLed) {
     char buffer[5];
     sendChar(buffer, timeLed->hour);
-    buffer[2]=':';
-    sendChar(buffer+3, timeLed->minute);
+    buffer[2] = ':';
+    sendChar(buffer + 3, timeLed->minute);
     httpdSend(connData, buffer, 5);
 }
 
-static void sendChar(char * buffer,  int8_t c) {
-    buffer[0] = c/10 + '0';
-    buffer[1] = c%10 + '0';
+static void sendChar(char *buffer, int8_t c) {
+    buffer[0] = c / 10 + '0';
+    buffer[1] = c % 10 + '0';
 }
 
 
 // Expexted format: hh:mm
-struct TimeLed decodeTime(char * data){
+struct TimeLed decodeTime(char *data) {
     struct TimeLed result;
     result.hour = result.minute = -1;
     if (data[2] != ':')
         return result;
     char h1 = data[0];
-    if (h1 != '0' && h1 !='1' && h1 != '2')
+    if (h1 != '0' && h1 != '1' && h1 != '2')
         return result;
-    result.hour = (h1-'0')*10;
+    result.hour = (h1 - '0') * 10;
     char h2 = data[1];
     if (h2 < '0' || h2 > '9')
         return result;
-    result.hour += h2-'0';
-    if (result.hour>24)
+    result.hour += h2 - '0';
+    if (result.hour > 24)
         return result;
     char m1 = data[3];
-    if (m1 < '0' || m1 >= '6'){
+    if (m1 < '0' || m1 >= '6') {
         return result;
     }
-    result.minute = (m1-'0')*10;
+    result.minute = (m1 - '0') * 10;
     char m2 = data[4];
-    if (m2 <'0' || m2 > '9'){
+    if (m2 < '0' || m2 > '9') {
         result.minute = -1;
         return result;
     }
-    result.minute += m2- '0';
-    if (result.minute >= 60){
+    result.minute += m2 - '0';
+    if (result.minute >= 60) {
         result.minute = -1;
     }
-    return  result;
+    return result;
 }
 
 HttpdBuiltInUrl builtInUrls[] = {
-    {"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
-    {"/who_are_you", whoAreYou, NULL},
-    {"/on",          onOff,     ON},
-    {"/off",         onOff,     OFF},
-    {"/status",      getStatus, NULL},
-    {"/onTime",      startEndTime,     START_TIME},
-    {"/offTime",     startEndTime,     END_TIME},
-    {"/temperature",     httpTemperature,     NULL},
+    {"*",             cgiRedirectApClientToHostname, "esp8266.nonet"},
+    {"/who_are_you",  whoAreYou,        NULL},
+    {"/on",           onOff,            ON},
+    {"/off",          onOff,            OFF},
+    {"/status",       getStatus,        NULL},
+    {"/onTime",       startEndTime,     START_TIME},
+    {"/offTime",      startEndTime,     END_TIME},
+    {"/temperature",  httpTemperature,  NULL},
     {"/humidity",     httpHumidity,     NULL},
+    {"/temperatures", httpTemperatures, NULL},
+    {"/humidity",     httpHumidities,   NULL},
 };
 
 void user_init(void) {
@@ -245,6 +285,6 @@ void user_init(void) {
     httpdInit(builtInUrls, 80);
     xTaskCreate(sntpTask, "SNTP", 1024, NULL, 1, NULL);
     xTaskCreate(wifiTask, "wifiTask", 512, NULL, 1, NULL);
-    xTaskCreate(dht22Task, "dht22Task", 512, NULL, 1, NULL);
+    xTaskCreate(dht112Task, "dht112Task", 512, NULL, 1, NULL);
 
 }
