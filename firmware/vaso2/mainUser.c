@@ -121,15 +121,18 @@ int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
 
     uint16_t tot = 50;
     uint16_t newerSector = getLastSector();
+    printf("newerSector: %02X\n", newerSector);
     struct DataSample *dataSamples = getSamples(newerSector);
     uint16_t lastSample = getLastSample();
     struct DataSample *iter = dataSamples + lastSample;
-    struct DataSample *end = iter + (lastSample > 50 ? 50 : lastSample);
-    for (; iter != end; iter--) {
+    for (; iter != dataSamples; iter--) {
         int16_t value = temperature ? iter->temperature : iter->humidity;
-        sprintf(buffer, "%lld %d\n", iter->timestamp, value);
+
+        httpdSend(connData, utoa(iter->timestamp,buffer, 10), -1);
+        httpdSend(connData, " ", 1);
+        httpdSend(connData, itoa(value,buffer, 10), -1);
+        httpdSend(connData, "\n", 1);
         tot--;
-        httpdSend(connData, buffer, -1);
     }
     return HTTPD_CGI_DONE;
 }
@@ -261,7 +264,7 @@ HttpdBuiltInUrl builtInUrls[] = {
     {"/temperature",  httpTemperature,  NULL},
     {"/humidity",     httpHumidity,     NULL},
     {"/temperatures", httpTemperatures, NULL},
-    {"/humidity",     httpHumidities,   NULL},
+    {"/humidities",     httpHumidities,   NULL},
 };
 
 void user_init(void) {

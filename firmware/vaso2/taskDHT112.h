@@ -18,7 +18,7 @@ struct DataSample {
 void dht112Task(void *pvParameters);
 uint16_t getLastSector();
 struct DataSample * getSamples(uint16_t sector);
-uint16_t getLastSample();
+int16_t getLastSample();
 
 extern int16_t humidity;
 extern int16_t temperature;

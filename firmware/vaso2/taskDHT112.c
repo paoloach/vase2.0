@@ -27,7 +27,9 @@ static void saveData();
 static uint16_t findSector(time_t ts);
 
 static void initSector(uint16_t sector, time_t ts);
+
 static bool isFullSector();
+
 static void readSector(uint16_t sector);
 
 void dht112Task(void *pvParameters) {
@@ -62,19 +64,19 @@ struct DataBuffer {
 void saveData() {
     time_t ts = time(NULL);
     uint16_t sector = findSector(ts);
-    printf("sector: %d\n", sector);
-    uint16_t sampleIndex = getLastSample()+1;
-    uint8_t  mapIndex = sampleIndex /8;
-    uint8_t  mapBit = 1 << (sampleIndex % 8);
+    uint16_t sampleIndex = getLastSample() + 1;
+    uint8_t mapIndex = sampleIndex / 8;
+    uint8_t mapBit = ~(1 << (sampleIndex % 8));
     uint32_t samplePos = sector * 0x1000 + BYTES_MAP + sampleIndex * sizeof(struct DataSample);
     struct DataSample dataSample;
     dataSample.temperature = temperature;
     dataSample.humidity = humidity;
     dataSample.timestamp = ts;
-    printf("Write sample index %d, at  %06X, map offset %d, bit %02X\n",  sampleIndex, samplePos, mapIndex, mapBit );
-    sdk_spi_flash_write(samplePos, (uint32_t *)&dataSample, sizeof(struct DataSample));
-    dataBuffer.map[mapIndex] |= mapBit;
-    sdk_spi_flash_write((uint32_t )sector * 0x1000,(uint32_t*) &dataBuffer.map, BYTES_MAP);
+
+    sdk_spi_flash_write(samplePos, (uint32_t *) &dataSample, sizeof(struct DataSample));
+    dataBuffer.map[mapIndex] &= mapBit;
+    printf("Write sample index %d, at  %06X, map offset %d, bit %02X\n", sampleIndex, samplePos, mapIndex, dataBuffer.map[mapIndex]);
+    sdk_spi_flash_write((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer.map, BYTES_MAP);
 }
 
 uint16_t findSector(time_t ts) {
@@ -84,16 +86,16 @@ uint16_t findSector(time_t ts) {
             initSector(sector, ts);
             return sector;
         }
-        if (!isFullSector()){
+        if (!isFullSector()) {
             return sector;
         }
     }
     time_t oldest = 0xFFFFFFFF;
-    uint16_t oldestSector=0xF0;
+    uint16_t oldestSector = 0xF0;
     for (uint16_t sector = 0xF0; sector <= 0xFF; sector++) {
         readSector(sector);
         if (dataBuffer.samples[0].timestamp < oldest) {
-            oldest =dataBuffer.samples[0].timestamp;
+            oldest = dataBuffer.samples[0].timestamp;
             oldestSector = sector;
         }
     }
@@ -106,7 +108,7 @@ static void initSector(uint16_t sector, time_t ts) {
     sdk_spi_flash_erase_sector(sector);
     memset(dataBuffer.map, 0xFF, BYTES_MAP);
     memset(dataBuffer.samples, 0xFF, MAX_SAMPLES * sizeof(struct DataSample));
-    sdk_spi_flash_write((uint32_t )sector * 0x1000,(uint32_t *) &dataBuffer, sizeof(struct DataBuffer));
+    sdk_spi_flash_write((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer, sizeof(struct DataBuffer));
 }
 
 uint16_t getLastSector() {
@@ -114,7 +116,7 @@ uint16_t getLastSector() {
     uint16_t newerSector = 0;
     for (uint16_t sector = 0xF0; sector <= 0xFF; sector++) {
         readSector(sector);
-        uint16_t  sampleIndex = getLastSample();
+        uint16_t sampleIndex = getLastSample();
 
         if (dataBuffer.samples[sampleIndex].timestamp > newerTime) {
             newerTime = dataBuffer.samples[sampleIndex].timestamp;
@@ -130,42 +132,50 @@ struct DataSample *getSamples(uint16_t sector) {
 }
 
 static bool isFullSector() {
-    for(int mapIndex=0; mapIndex < BYTES_MAP; mapIndex++){
+    for (int mapIndex = 0; mapIndex < BYTES_MAP; mapIndex++) {
         if (dataBuffer.map[mapIndex] != FULL_MAP)
             return false;
     }
     return true;
 }
 
-uint16_t getLastSample() {
+int16_t getLastSample() {
     uint16_t sampleIndex = 0;
     for (uint16_t mapIndex = 0; mapIndex < BYTES_MAP; mapIndex++) {
         if (dataBuffer.map[mapIndex] != FULL_MAP) {
             uint8_t map = dataBuffer.map[mapIndex];
-            sampleIndex = mapIndex * 8;
-            if ((map & 2) == 0) {
-                sampleIndex += 1;
-            } else if ((map & 4) == 0) {
-                sampleIndex += 2;
-            } else if ((map & 8) == 0) {
-                sampleIndex += 3;
-            } else if ((map & 0x10) == 0) {
-                sampleIndex += 4;
-            } else if ((map & 0x20) == 0) {
-                sampleIndex += 5;
-            } else if ((map & 0x40) == 0) {
-                sampleIndex += 6;
-            } else if ((map & 0x80) == 0) {
-                sampleIndex += 7;
+            sampleIndex = mapIndex * 8 - 1;
+            switch(map){
+                case 0xFE:
+                    sampleIndex+=1;
+                    break;
+                case 0xFC:
+                    sampleIndex+=2;
+                    break;
+                case 0xF8:
+                    sampleIndex+=3;
+                    break;
+                case 0xF0:
+                    sampleIndex+=4;
+                    break;
+                case 0xE0:
+                    sampleIndex+=5;
+                    break;
+                case 0xC0:
+                    sampleIndex+=6;
+                    break;
+                case 0x80:
+                    sampleIndex+=7;
+                    break;
             }
             printf("mapIndex = %d, sampleIndex = %d\n", mapIndex, sampleIndex);
             return sampleIndex;
         }
     }
-    return BYTES_MAP*8-1;
+    return BYTES_MAP * 8 - 1;
 }
 
 static void readSector(uint16_t sector) {
     printf("Read sector %02X\n", sector);
-    sdk_spi_flash_read((uint32_t )sector * 0x1000, (uint32_t *)&dataBuffer, sizeof(struct DataBuffer));
+    sdk_spi_flash_read((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer, sizeof(struct DataBuffer));
 }
