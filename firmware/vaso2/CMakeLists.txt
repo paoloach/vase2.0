@@ -27,7 +27,7 @@ SET(COMMON_FLAGS -mlongcalls -mtext-section-literals -DGITSHORTREV=\"93d43d7\" -
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 SET(CMAKE_C_FLAGS "-std=gnu99")
 
-set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c taskDHT112.c)
+set(PROGRAM_SRC mainUser.c taskSNTP.c WifiTask.c Pins.h taskSNTP.h WifiTask.h TimeKeeping.c taskDHT112.c )
 
 set(ESP_OPEN_RTOS_DIR /home/paolo/esp2866/esp-open-rtos)
 set(BOOT_FIRMWARE ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/rboot.bin)

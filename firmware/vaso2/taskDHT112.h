@@ -6,7 +6,7 @@
 #define VASO2_TASKDHT22_H
 
 #define MAX_SAMPLES 336
-#define BYTES_MAP 42
+#define BYTES_MAP 44
 
 
 struct DataSample {
@@ -16,7 +16,7 @@ struct DataSample {
 }  __attribute__ ((packed));
 
 void dht112Task(void *pvParameters);
-uint16_t getLastSector();
+uint16_t getLastSector(time_t before);
 struct DataSample * getSamples(uint16_t sector);
 int16_t getLastSample();
 

@@ -9,7 +9,6 @@
 #include <ssid_config.h>
 #include <task.h>
 
-
 #include "taskSNTP.h"
 #include "WifiTask.h"
 #include "taskDHT112.h"
@@ -27,6 +26,9 @@ static void sendTimeLed(HttpdConnData *connData, struct TimeLed *timeLed);
 
 static int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *, int16_t);
 
+static bool checkGetMethod(HttpdConnData *connData);
+
+
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
 int ICACHE_FLASH_ATTR whoAreYou(HttpdConnData *connData) {
@@ -34,11 +36,8 @@ int ICACHE_FLASH_ATTR whoAreYou(HttpdConnData *connData) {
         //Connection aborted. Clean up.
         return HTTPD_CGI_DONE;
     }
-    if (connData->requestType != HTTPD_METHOD_GET) {
-        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
-        httpdEndHeaders(connData);
+    if (!checkGetMethod(connData))
         return HTTPD_CGI_DONE;
-    }
     httpdStartResponse(connData, 200);
     httpdHeader(connData, "Content-Type", "text/plain");
     httpdEndHeaders(connData);
@@ -49,14 +48,12 @@ int ICACHE_FLASH_ATTR whoAreYou(HttpdConnData *connData) {
 }
 
 int ICACHE_FLASH_ATTR getStatus(HttpdConnData *connData) {
+    printf("GetStatus\n");
     if (connData->conn == NULL) {
         return HTTPD_CGI_DONE;
     }
-    if (connData->requestType != HTTPD_METHOD_GET) {
-        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
-        httpdEndHeaders(connData);
+    if (!checkGetMethod(connData))
         return HTTPD_CGI_DONE;
-    }
     httpdStartResponse(connData, 200);
     httpdHeader(connData, "Content-Type", "text/plain");
     httpdEndHeaders(connData);
@@ -78,6 +75,7 @@ int ICACHE_FLASH_ATTR getStatus(HttpdConnData *connData) {
     httpdSend(connData, "\ntime: ", 7);
     sendTimeLed(connData, &tl);
     httpdSend(connData, "\n", 1);
+    printf("End getStatus\n");
     return HTTPD_CGI_DONE;
 }
 
@@ -104,35 +102,94 @@ int ICACHE_FLASH_ATTR onOff(HttpdConnData *connData) {
     return HTTPD_CGI_DONE;
 }
 
-
+/**
+ * /temperatures or /humitities
+ * query params availabes;
+ * start='integer'  default = 0
+ * size='integer' default 50
+ * @param connData
+ * @param temperature
+ * @return
+ */
 int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
     char buffer[30];
     if (connData->conn == NULL) {
         return HTTPD_CGI_DONE;
     }
-    if (connData->requestType != HTTPD_METHOD_GET) {
-        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
-        httpdEndHeaders(connData);
+    if (!checkGetMethod(connData))
         return HTTPD_CGI_DONE;
-    }
+
     httpdStartResponse(connData, 200);
     httpdHeader(connData, "Content-Type", "text/plain");
     httpdEndHeaders(connData);
 
-    uint16_t tot = 50;
-    uint16_t newerSector = getLastSector();
-    printf("newerSector: %02X\n", newerSector);
-    struct DataSample *dataSamples = getSamples(newerSector);
-    uint16_t lastSample = getLastSample();
-    struct DataSample *iter = dataSamples + lastSample;
-    for (; iter != dataSamples; iter--) {
-        int16_t value = temperature ? iter->temperature : iter->humidity;
+    int32_t size = 50;
+    int32_t start = 0;
 
-        httpdSend(connData, utoa(iter->timestamp,buffer, 10), -1);
-        httpdSend(connData, " ", 1);
-        httpdSend(connData, itoa(value,buffer, 10), -1);
-        httpdSend(connData, "\n", 1);
-        tot--;
+    if (connData->getArgs != NULL) {
+        char *startParam = connData->getArgs;
+
+        while (true) {
+            char *endParam = strchr(startParam, '&');
+            if (endParam != NULL) {
+                *endParam = 0;
+            }
+            char *startValue = strchr(startParam, '=');
+            if (startValue != NULL) {
+                *startValue = 0;
+                startValue++;
+            }
+            strlwr(startParam);
+            if (strcmp(startParam, "start") == 0) {
+                printf("Found param start with value %s\n", startValue);
+                if (startValue != NULL) {
+                    start = atoi(startValue);
+                }
+            } else if (strcmp(startParam, "size") == 0) {
+                printf("Found param size with value %s\n", startValue);
+                if (startValue != NULL) {
+                    size = atoi(startValue);
+                }
+            }
+            if (endParam == NULL)
+                break;
+            startParam = endParam + 1;
+        }
+
+    }
+    printf("start: %d, size: %d\n", start, size);
+
+    int32_t toSkip = start;
+    time_t before = time(NULL);
+
+    while(true) {
+        uint16_t newerSector = getLastSector(before);
+        printf("newerSector %02X for time %u", newerSector, (uint32_t )before);
+        if (newerSector == 0)
+            break;
+        struct DataSample *dataSamples = getSamples(newerSector);
+        int16_t lastSample = getLastSample();
+        if (lastSample <= toSkip) {
+            printf("Skip all the sector\n");
+            toSkip -= lastSample;
+            before = dataSamples->timestamp - 1;
+            continue;
+        }
+        printf("Remain to skip %d\n", toSkip);
+        int16_t startSample = lastSample-toSkip;
+        toSkip=0;
+        struct DataSample *iter = dataSamples + startSample;
+        for (; iter != dataSamples && size >=0; iter--, size--) {
+            int16_t value = temperature ? iter->temperature : iter->humidity;
+            httpdSend(connData, utoa(iter->timestamp, buffer, 10), -1);
+            httpdSend(connData, " ", 1);
+            httpdSend(connData, itoa(value, buffer, 10), -1);
+            httpdSend(connData, "\n", 1);
+        }
+        printf("Remain %d data to send\n", size);
+        if (size==0)
+            break;
+        before = dataSamples->timestamp-1;
     }
     return HTTPD_CGI_DONE;
 }
@@ -159,11 +216,8 @@ int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *field, int1
     if (connData->conn == NULL) {
         return HTTPD_CGI_DONE;
     }
-    if (connData->requestType != HTTPD_METHOD_GET) {
-        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
-        httpdEndHeaders(connData);
+    if (!checkGetMethod(connData))
         return HTTPD_CGI_DONE;
-    }
     httpdStartResponse(connData, 200);
     httpdHeader(connData, "Content-Type", "text/plain");
     httpdEndHeaders(connData);
@@ -264,7 +318,8 @@ HttpdBuiltInUrl builtInUrls[] = {
     {"/temperature",  httpTemperature,  NULL},
     {"/humidity",     httpHumidity,     NULL},
     {"/temperatures", httpTemperatures, NULL},
-    {"/humidities",     httpHumidities,   NULL},
+    {"/humidities",   httpHumidities,   NULL},
+    {NULL,NULL,NULL}
 };
 
 void user_init(void) {
@@ -281,9 +336,7 @@ void user_init(void) {
     sdk_wifi_station_set_config(&config);
 
     initIO();
-
-
-    captdnsInit();
+//    captdnsInit();
 
     httpdInit(builtInUrls, 80);
     xTaskCreate(sntpTask, "SNTP", 1024, NULL, 1, NULL);
@@ -291,3 +344,13 @@ void user_init(void) {
     xTaskCreate(dht112Task, "dht112Task", 512, NULL, 1, NULL);
 
 }
+
+static bool checkGetMethod(HttpdConnData *connData) {
+    if (connData->requestType != HTTPD_METHOD_GET) {
+        httpdStartResponse(connData, 406);  //http error code 'unacceptable'
+        httpdEndHeaders(connData);
+        return false;
+    }
+    return true;
+}
+

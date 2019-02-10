@@ -37,12 +37,11 @@ void dht112Task(void *pvParameters) {
 
     while (true) {
         bool status = dht_read_data(DHT_TYPE_DHT11, DHT112_LED, &humidity, &temperature);
-        if (status) {
-            printf("humidity: %d, temperature: %d\n", humidity, temperature);
-        } else {
+        if (!status) {
             printf("error reading data from DHT22\n");
+        } else {
+            saveData();
         }
-        saveData();
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
@@ -55,7 +54,7 @@ struct DataBuffer {
 
 
 // every 4096 flash block contains
-// 42 bytes for map -> 42*8= 336 samples
+// 44 bytes for map -> 42*8= 336 samples + 2 bytes to 4 bytes alignment
 // 12 bytes for data:
 //      8 bytes timestamp
 //      2 bytes humidity
@@ -66,17 +65,25 @@ void saveData() {
     uint16_t sector = findSector(ts);
     uint16_t sampleIndex = getLastSample() + 1;
     uint8_t mapIndex = sampleIndex / 8;
-    uint8_t mapBit = ~(1 << (sampleIndex % 8));
+    uint8_t bit = sampleIndex % 8;
+    uint8_t mapBit = ~(1 << bit);
     uint32_t samplePos = sector * 0x1000 + BYTES_MAP + sampleIndex * sizeof(struct DataSample);
     struct DataSample dataSample;
     dataSample.temperature = temperature;
     dataSample.humidity = humidity;
     dataSample.timestamp = ts;
-
-    sdk_spi_flash_write(samplePos, (uint32_t *) &dataSample, sizeof(struct DataSample));
+    sdk_SpiFlashOpResult result = sdk_spi_flash_write(samplePos, (uint32_t *) &dataSample, sizeof(struct DataSample));
     dataBuffer.map[mapIndex] &= mapBit;
-    printf("Write sample index %d, at  %06X, map offset %d, bit %02X\n", sampleIndex, samplePos, mapIndex, dataBuffer.map[mapIndex]);
-    sdk_spi_flash_write((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer.map, BYTES_MAP);
+    uint32_t  first_page_portion = sdk_flashchip.page_size - (samplePos % sdk_flashchip.page_size);
+    printf("first_page_portion: %d\n", first_page_portion );
+    if (result == SPI_FLASH_RESULT_OK ) {
+        printf("Write sample index %d, at  %06X, map offset %d, bit %d, new map %02X\n", sampleIndex, samplePos,
+               mapIndex, bit, dataBuffer.map[mapIndex]);
+        sdk_spi_flash_write((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer.map, BYTES_MAP);
+    } else {
+        printf("--------ERROR-------- writing sample index %d at %06X: error code %d\n", sampleIndex, samplePos, result);
+    }
+
 }
 
 uint16_t findSector(time_t ts) {
@@ -111,15 +118,16 @@ static void initSector(uint16_t sector, time_t ts) {
     sdk_spi_flash_write((uint32_t) sector * 0x1000, (uint32_t *) &dataBuffer, sizeof(struct DataBuffer));
 }
 
-uint16_t getLastSector() {
+uint16_t getLastSector(time_t before) {
     time_t newerTime = 0;
     uint16_t newerSector = 0;
     for (uint16_t sector = 0xF0; sector <= 0xFF; sector++) {
         readSector(sector);
         uint16_t sampleIndex = getLastSample();
+        time_t lastTime = dataBuffer.samples[sampleIndex].timestamp;
 
-        if (dataBuffer.samples[sampleIndex].timestamp > newerTime) {
-            newerTime = dataBuffer.samples[sampleIndex].timestamp;
+        if (lastTime > newerTime &&  lastTime <= before) {
+            newerTime = lastTime;
             newerSector = sector;
         }
     }
@@ -140,12 +148,12 @@ static bool isFullSector() {
 }
 
 int16_t getLastSample() {
-    uint16_t sampleIndex = 0;
-    for (uint16_t mapIndex = 0; mapIndex < BYTES_MAP; mapIndex++) {
-        if (dataBuffer.map[mapIndex] != FULL_MAP) {
-            uint8_t map = dataBuffer.map[mapIndex];
-            sampleIndex = mapIndex * 8 - 1;
-            switch(map){
+    uint16_t sampleIndex = -1;
+    uint8_t * mapIter = dataBuffer.map;
+    uint8_t * mapIterEnd = dataBuffer.map+BYTES_MAP;
+    for (;mapIter != mapIterEnd; mapIter++){
+        if (*mapIter != FULL_MAP) {
+            switch(*mapIter){
                 case 0xFE:
                     sampleIndex+=1;
                     break;
@@ -168,9 +176,9 @@ int16_t getLastSample() {
                     sampleIndex+=7;
                     break;
             }
-            printf("mapIndex = %d, sampleIndex = %d\n", mapIndex, sampleIndex);
             return sampleIndex;
         }
+        sampleIndex+=8;
     }
     return BYTES_MAP * 8 - 1;
 }
