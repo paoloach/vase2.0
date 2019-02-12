@@ -103,15 +103,17 @@ int ICACHE_FLASH_ATTR onOff(HttpdConnData *connData) {
 }
 
 /**
- * /temperatures or /humitities
  * query params availabes;
  * start='integer'  default = 0
  * size='integer' default 50
+ * Generate response:
+ * list of
+ *    epochTime temperature humidity soilMoisture
  * @param connData
  * @param temperature
  * @return
  */
-int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
+int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData) {
     char buffer[30];
     if (connData->conn == NULL) {
         return HTTPD_CGI_DONE;
@@ -180,10 +182,13 @@ int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
         toSkip=0;
         struct DataSample *iter = dataSamples + startSample;
         for (; iter != dataSamples && size >=0; iter--, size--) {
-            int16_t value = temperature ? iter->temperature : iter->humidity;
             httpdSend(connData, utoa(iter->timestamp, buffer, 10), -1);
             httpdSend(connData, " ", 1);
-            httpdSend(connData, itoa(value, buffer, 10), -1);
+            httpdSend(connData, itoa(iter->temperature, buffer, 10), -1);
+            httpdSend(connData, " ", 1);
+            httpdSend(connData, itoa(iter->humidity, buffer, 10), -1);
+            httpdSend(connData, " ", 1);
+            httpdSend(connData, itoa(iter->soil, buffer, 10), -1);
             httpdSend(connData, "\n", 1);
         }
         printf("Remain %d data to send\n", size);
@@ -194,21 +199,17 @@ int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData, bool temperature) {
     return HTTPD_CGI_DONE;
 }
 
-int ICACHE_FLASH_ATTR httpTemperatures(HttpdConnData *connData) {
-    return httpData(connData, true);
-}
-
-int ICACHE_FLASH_ATTR httpHumidities(HttpdConnData *connData) {
-    return httpData(connData, true);
-}
-
-
 int ICACHE_FLASH_ATTR httpTemperature(HttpdConnData *connData) {
     return commonGet(connData, "temperature", temperature);
 }
 
 int ICACHE_FLASH_ATTR httpHumidity(HttpdConnData *connData) {
     return commonGet(connData, "humidity", humidity);
+}
+
+int ICACHE_FLASH_ATTR httpSoilMoisture(HttpdConnData *connData) {
+    uint16_t soilMoisture= sdk_system_adc_read();
+    return commonGet(connData, "soilMoisture", soilMoisture);
 }
 
 int ICACHE_FLASH_ATTR commonGet(HttpdConnData *connData, const char *field, int16_t value) {
@@ -317,8 +318,8 @@ HttpdBuiltInUrl builtInUrls[] = {
     {"/offTime",      startEndTime,     END_TIME},
     {"/temperature",  httpTemperature,  NULL},
     {"/humidity",     httpHumidity,     NULL},
-    {"/temperatures", httpTemperatures, NULL},
-    {"/humidities",   httpHumidities,   NULL},
+    {"/data", httpData, NULL},
+    {"/soil",   httpSoilMoisture,   NULL},
     {NULL,NULL,NULL}
 };
 

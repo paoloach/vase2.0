@@ -16,6 +16,7 @@
 
 int16_t humidity;
 int16_t temperature;
+int16_t soil;
 
 #define FULL_MAP    0x00
 #define EMPTY_MAP   0xFF
@@ -32,6 +33,8 @@ static bool isFullSector();
 
 static void readSector(uint16_t sector);
 
+#define SAMPLE_TIME 10
+
 void dht112Task(void *pvParameters) {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 
@@ -42,7 +45,7 @@ void dht112Task(void *pvParameters) {
         } else {
             saveData();
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(SAMPLE_TIME*1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -54,11 +57,12 @@ struct DataBuffer {
 
 
 // every 4096 flash block contains
-// 44 bytes for map -> 42*8= 336 samples + 2 bytes to 4 bytes alignment
-// 12 bytes for data:
+// 32 bytes for map -> 32*8= 256 samples
+// 254 x 16 bytes for data:
 //      8 bytes timestamp
 //      2 bytes humidity
 //      2 bytes temperature
+//      2 bytes soil moisture
 // use block F0, ... , FF
 void saveData() {
     time_t ts = time(NULL);
@@ -71,11 +75,10 @@ void saveData() {
     struct DataSample dataSample;
     dataSample.temperature = temperature;
     dataSample.humidity = humidity;
+    dataSample.soil = sdk_system_adc_read();
     dataSample.timestamp = ts;
     sdk_SpiFlashOpResult result = sdk_spi_flash_write(samplePos, (uint32_t *) &dataSample, sizeof(struct DataSample));
     dataBuffer.map[mapIndex] &= mapBit;
-    uint32_t  first_page_portion = sdk_flashchip.page_size - (samplePos % sdk_flashchip.page_size);
-    printf("first_page_portion: %d\n", first_page_portion );
     if (result == SPI_FLASH_RESULT_OK ) {
         printf("Write sample index %d, at  %06X, map offset %d, bit %d, new map %02X\n", sampleIndex, samplePos,
                mapIndex, bit, dataBuffer.map[mapIndex]);
