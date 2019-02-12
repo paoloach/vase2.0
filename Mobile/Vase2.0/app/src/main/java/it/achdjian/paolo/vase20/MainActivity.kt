@@ -1,19 +1,75 @@
 package it.achdjian.paolo.vase20
 
+import android.annotation.SuppressLint
+import android.graphics.Color
 import android.os.Bundle
+import android.preference.PreferenceManager
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.edit
+import com.jjoe64.graphview.series.DataPoint
+import com.jjoe64.graphview.series.LineGraphSeries
+import it.achdjian.paolo.vase20.Rest.SensorData
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_main.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        const val TAG = "MainActivity"
+        const val IP_KEY = "IP"
+        @SuppressLint("SimpleDateFormat")
+        val DATE_FORMAT = SimpleDateFormat("hh:mm")
+    }
+
+    private lateinit var request: RestRequest
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        request = RestRequest(PreferenceManager.getDefaultSharedPreferences(this), this)
         setSupportActionBar(toolbar)
+        btIP.setOnClickListener {
+            PreferenceManager.getDefaultSharedPreferences(this).edit {
+                putString(IP_KEY, editIP.text.toString())
+                request.requestWhoAreYou()
+            }
+        }
+        light_switch.setOnCheckedChangeListener { _, isChechked ->
+            if (isChechked)
+                request.setOn()
+            else
+                request.setOff()
+        }
+        applyTimeButton.setOnClickListener {
+            var dawn: Date? = null
+            try {
+                dawn = DATE_FORMAT.parse(dawnTime.text.toString())
+            } catch (e: Exception) {
+                Log.i(TAG, "error reading dawnTime widget: ", e)
+                Toast.makeText(this, "Invalid dawn time: should be in the format hh:mm", Toast.LENGTH_LONG).show()
+                dawnTime.requestFocus()
+            }
+            dawn?.let {
 
+                try {
+                    val sunset = DATE_FORMAT.parse(sunsetTime.text.toString())
+                    request.setTime(dawn, sunset)
+                } catch (e: Exception) {
+                    Log.i(TAG, "error reading sunsetTime widget: ", e)
+                    Toast.makeText(this, "Invalid sunset time: should be in the format hh:mm", Toast.LENGTH_LONG).show()
+                    sunsetTime.requestFocus()
+                }
+            }
+        }
+        updateButton.setOnClickListener {
+            request.updateDate(Date(), 50)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -30,5 +86,62 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    fun connected() {
+        connectedImage.setImageResource(android.R.drawable.presence_online)
+        light_switch.isEnabled = true
+        dawnTime.isEnabled = true
+        sunsetTime.isEnabled = true
+        applyTimeButton.isEnabled=true
+        updateButton.isEnabled=true
+        graph.isEnabled=true
+        request.requestStatus()
+        dawnTime.isEnabled = true
+    }
+
+    fun disconnected() {
+        connectedImage.setImageResource(android.R.drawable.presence_offline)
+        light_switch.isEnabled = false
+        dawnTime.isEnabled = false
+        sunsetTime.isEnabled = false
+        applyTimeButton.isEnabled=false
+        updateButton.isEnabled=false
+        graph.isEnabled=false
+    }
+
+    fun lightOn() {
+        light_switch.isChecked = true
+    }
+
+    fun lightOff() {
+        light_switch.isChecked = false
+    }
+
+    @SuppressLint("SetTextI18n")
+    fun setDawn(hour: Int, minute: Int) {
+        dawnTime.setText("$hour:$minute", TextView.BufferType.NORMAL)
+    }
+
+    @SuppressLint("SetTextI18n")
+    fun setSunset(hour: Int, minute: Int) {
+        sunsetTime.setText("$hour:$minute", TextView.BufferType.NORMAL)
+    }
+
+    fun updateData(list: List<SensorData>) {
+        val temperatures = list.map{DataPoint(it.date, it.temperature.toDouble())}.toTypedArray()
+        val humidities = list.map{DataPoint(it.date, it.humidity.toDouble())}.toTypedArray()
+        val temperatureSeries = LineGraphSeries<DataPoint>(temperatures)
+        val humiditiesSeries =   LineGraphSeries<DataPoint>(humidities)
+        graph.addSeries(temperatureSeries)
+        graph.secondScale.addSeries(humiditiesSeries)
+        graph.secondScale.setMinY(0.0)
+        graph.secondScale.setMaxY(100.0)
+        temperatureSeries.color = Color.BLACK
+        humiditiesSeries.color = Color.BLUE
+
+        temperatureSeries.title = "Temperature"
+        humiditiesSeries.title = "Humidity"
+        graph.getGridLabelRenderer().setHumanRounding(false);
     }
 }
