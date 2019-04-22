@@ -34,6 +34,7 @@ static bool isFullSector();
 static void readSector(uint16_t sector);
 
 #define SAMPLE_TIME 10
+//#define SAMPLE_TIME 300
 
 void dht112Task(void *pvParameters) {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);

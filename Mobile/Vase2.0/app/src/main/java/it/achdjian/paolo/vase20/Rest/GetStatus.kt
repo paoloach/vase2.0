@@ -9,7 +9,7 @@ import java.lang.Exception
  */
 class GetStatus(val restEngine: RestEngine, val handler: Handler) : Runnable {
     companion object {
-        const val TAG="WhoAreYou"
+        const val TAG="GetStatus"
     }
     override fun run() {
         Log.i(TAG,"get status")

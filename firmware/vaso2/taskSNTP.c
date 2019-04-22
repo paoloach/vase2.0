@@ -186,11 +186,11 @@ void initIO() {
 }
 
 void onLight() {
-    gpio_write(LED_PIN, true);
+    gpio_write(LED_PIN, false);
     lightOn = true;
 }
 
 void offLight() {
-    gpio_write(LED_PIN, false);
+    gpio_write(LED_PIN, true);
     lightOn = false;
 }

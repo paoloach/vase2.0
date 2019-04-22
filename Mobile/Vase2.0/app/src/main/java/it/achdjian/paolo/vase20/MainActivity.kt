@@ -11,13 +11,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import com.jjoe64.graphview.series.DataPoint
-import com.jjoe64.graphview.series.LineGraphSeries
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 import it.achdjian.paolo.vase20.Rest.SensorData
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -25,9 +28,11 @@ class MainActivity : AppCompatActivity() {
         const val IP_KEY = "IP"
         @SuppressLint("SimpleDateFormat")
         val DATE_FORMAT = SimpleDateFormat("hh:mm")
+        val X_AXIS_DATE_FORMATTER = AxisDateFormatter()
     }
 
     private lateinit var request: RestRequest
+    private val listsData = ArrayList<SensorData>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,8 +73,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateButton.setOnClickListener {
+            listsData.clear()
             request.updateDate(Date(), 50)
         }
+
+        graph.xAxis.valueFormatter = X_AXIS_DATE_FORMATTER
+        graph.xAxis.granularity = 5*60f // granularity at 5 minutes
+        graph.xAxis.position = XAxis.XAxisPosition.BOTTOM
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -129,19 +139,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateData(list: List<SensorData>) {
-        val temperatures = list.map{DataPoint(it.date, it.temperature.toDouble())}.toTypedArray()
-        val humidities = list.map{DataPoint(it.date, it.humidity.toDouble())}.toTypedArray()
-        val temperatureSeries = LineGraphSeries<DataPoint>(temperatures)
-        val humiditiesSeries =   LineGraphSeries<DataPoint>(humidities)
-        graph.addSeries(temperatureSeries)
-        graph.secondScale.addSeries(humiditiesSeries)
-        graph.secondScale.setMinY(0.0)
-        graph.secondScale.setMaxY(100.0)
-        temperatureSeries.color = Color.BLACK
-        humiditiesSeries.color = Color.BLUE
+        listsData.addAll(list)
+        if (listsData.size < 150){
+            request.updateDate(list[0].date, 50)
+        } else{
+            displayData(listsData)
+        }
 
-        temperatureSeries.title = "Temperature"
-        humiditiesSeries.title = "Humidity"
-        graph.getGridLabelRenderer().setHumanRounding(false);
+    }
+
+    fun displayData(list: List<SensorData>){
+        Log.i(TAG,"Got ${list.size} data")
+
+        val temperatures = list.map{Entry(it.date.time.toFloat(), it.temperature.toFloat()/10)}.toList()
+        val soil = list.map{Entry(it.date.time.toFloat(), it.soil.toFloat())}.toList()
+        val humidities = list.map{Entry(it.date.time.toFloat(), it.humidity.toFloat()/10)}.toList()
+        val dataSetTemperatures = LineDataSet(temperatures, "Temperatures")
+        val dataSetSoil = LineDataSet(soil, "soil")
+        val dataHumidities = LineDataSet(humidities, "humidity")
+
+
+        dataSetTemperatures.setDrawCircles(false)
+        dataSetSoil.setDrawCircles(false)
+        dataHumidities.setDrawCircles(false)
+
+        dataSetTemperatures.color = Color.DKGRAY
+        dataSetSoil.color = Color.GREEN
+        dataHumidities.color = Color.BLUE
+
+        val lineData = LineData(dataSetTemperatures,dataSetSoil,dataHumidities)
+        graph.data = lineData
+        graph.invalidate()
     }
 }

@@ -12,8 +12,8 @@ class SensorConvertError(msg: String) : RuntimeException(msg)
 class GetData(
     val restEngine: RestEngine,
     val handler: Handler,
-    lastDate: Date,
-    samples: Int
+    val lastDate: Date,
+    val samples: Int=50
 ) : Runnable {
     companion object {
         const val TAG = "GetData"
@@ -22,7 +22,8 @@ class GetData(
 
     override fun run() {
         Log.i(GetStatus.TAG, "get status")
-        val response = restEngine.getMethod("/data")
+        val startTime = lastDate.time/1000
+        val response = restEngine.getMethod("/data?size=$samples&start=$startTime")
         val lines = response.lines()
             .map { it.split(" ") }
             .filter { it.size == 4 }
@@ -32,7 +33,7 @@ class GetData(
                     val temperature = convert(line[1], "temperature")
                     val humidity = convert(line[2], "air humidity")
                     val soil = convert(line[3], "soil moisture")
-                    SensorData(Date(epoch), temperature, humidity, soil)
+                    SensorData(Date(epoch*1000), temperature, humidity, soil)
                 } catch (e: Exception) {
                     infoLog("Invalid time date: $line[0]")
                     SensorData(Date(0), 0, 0, 0)
@@ -41,6 +42,7 @@ class GetData(
             }
             .filter { it.date.time != 0L }
             .toList()
+        Log.i(TAG, "received ${lines.size} valid data")
         handler.sendMessage(handler.obtainMessage(SENSOR_DATA, lines))
     }
 }

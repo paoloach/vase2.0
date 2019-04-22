@@ -192,7 +192,7 @@ int ICACHE_FLASH_ATTR httpData(HttpdConnData *connData) {
             httpdSend(connData, "\n", 1);
         }
         printf("Remain %d data to send\n", size);
-        if (size==0)
+        if (size<=0)
             break;
         before = dataSamples->timestamp-1;
     }

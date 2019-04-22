@@ -39,14 +39,19 @@ class RestRequest(
 
     override fun handleMessage(message: Message?): Boolean {
         message?.let {
+            val arg1= it.arg1
+            val arg2= it.arg2
             when (it.what) {
                 WHO_ARE_YOU_PRESENT -> mainActivity.runOnUiThread { mainActivity.connected() }
                 WHO_ARE_YOU_NOT_PRESENT -> mainActivity.runOnUiThread { mainActivity.disconnected() }
                 LIGHT_ON -> mainActivity.runOnUiThread { mainActivity.lightOn() }
                 LIGHT_OFF -> mainActivity.runOnUiThread { mainActivity.lightOff() }
-                DAWN_TIME -> mainActivity.runOnUiThread { mainActivity.setDawn(it.arg1, it.arg2) }
-                SUNSET_TIME -> mainActivity.runOnUiThread { mainActivity.setSunset(it.arg1, it.arg2) }
-                SENSOR_DATA -> mainActivity.runOnUiThread { mainActivity.updateData(it.obj as List<SensorData>) }
+                DAWN_TIME -> mainActivity.runOnUiThread { mainActivity.setDawn(arg1, arg2) }
+                SUNSET_TIME -> mainActivity.runOnUiThread { mainActivity.setSunset(arg1, arg2) }
+                SENSOR_DATA -> {
+                    val data = it.obj as List<SensorData>
+                    mainActivity.runOnUiThread { mainActivity.updateData(data.asReversed()) }
+                }
             }
         }
         return true
