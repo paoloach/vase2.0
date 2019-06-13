@@ -10,10 +10,10 @@ import java.util.*
 class SensorConvertError(msg: String) : RuntimeException(msg)
 
 class GetData(
-    val restEngine: RestEngine,
-    val handler: Handler,
-    val lastDate: Date,
-    val samples: Int=50
+    private val restEngine: RestEngine,
+    private val handler: Handler,
+    private val toSkip: Int,
+    private val samples: Int=50
 ) : Runnable {
     companion object {
         const val TAG = "GetData"
@@ -22,8 +22,7 @@ class GetData(
 
     override fun run() {
         Log.i(GetStatus.TAG, "get status")
-        val startTime = lastDate.time/1000
-        val response = restEngine.getMethod("/data?size=$samples&start=$startTime")
+        val response = restEngine.getMethod("/data?size=$samples&start=$toSkip")
         val lines = response.lines()
             .map { it.split(" ") }
             .filter { it.size == 4 }

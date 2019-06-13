@@ -5,15 +5,17 @@
 #ifndef VASO2_TASKDHT22_H
 #define VASO2_TASKDHT22_H
 
+#include <termios.h>
 #define MAX_SAMPLES 254
 #define BYTES_MAP 32
+
 
 
 struct DataSample {
     time_t timestamp;
     int16_t humidity;
     int16_t temperature;
-    int16_t soil;
+    uint16_t soil;
 }  __attribute__ ((aligned (4)));
 
 

@@ -290,7 +290,7 @@ add_custom_command(TARGET flash
         -fm ${FLASH_MODE}
         -ff ${FLASH_SPEED}m
         0x0 ${BOOT_FIRMWARE}
-        0x01000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
+            0x01000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0xF0000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0xF1000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin
         0xF2000 ${ESP_OPEN_RTOS_DIR}/bootloader/firmware_prebuilt/blank_config.bin

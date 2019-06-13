@@ -6,7 +6,6 @@
 #define VASO2_TASKSNTP_H
 
 
-#include "esp8266.h"
 
 enum OverWriteLight {
     NONE,
@@ -28,7 +27,7 @@ extern struct PeriodLed periodLed;
 extern bool lightOn;
 extern enum OverWriteLight overWriteLight;
 
-void sntpTask(void *pvParameters);
+void sntpStart(void *pvParameters);
 void initIO();
 void onLight();
 void offLight();

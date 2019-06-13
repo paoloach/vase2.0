@@ -11,14 +11,13 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by Paolo Achdjian on 2/8/19.
  */
-class RestEngine(val sharedPreferences: SharedPreferences) {
+class RestEngine(private val sharedPreferences: SharedPreferences) {
     companion object {
-        private val TAG="RestEngine"
-        private val JSON = okhttp3.MediaType.parse("application/json; charset=utf-8")
+        private const val TAG="RestEngine"
         private val TEXT_PLAIN = okhttp3.MediaType.parse("text/plain; charset=utf-8")
     }
 
-    protected val client: OkHttpClient = OkHttpClient
+    private val client: OkHttpClient = OkHttpClient
         .Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
@@ -42,7 +41,7 @@ class RestEngine(val sharedPreferences: SharedPreferences) {
                         .create(TEXT_PLAIN, body)
                 )
                 .build()
-            val response = client.newCall(request).execute()
+            client.newCall(request).execute()
         } catch (e: Exception){
             Log.i(TAG, "Error calling $url", e)
         }
@@ -51,7 +50,7 @@ class RestEngine(val sharedPreferences: SharedPreferences) {
 
     fun getMethod(path: String ):String{
         val address = sharedPreferences.getString(IP_KEY, "192.168.1.119")
-        val url = "http://" + address + path
+        val url = "http://$address$path"
         Log.i(TAG, url)
         val request = Request.Builder().url(url).get().build()
         try {

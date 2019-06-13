@@ -32,7 +32,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var request: RestRequest
-    private val listsData = ArrayList<SensorData>()
+    private val listsData = TreeMap<Date, SensorData>()
+    private var lastDate: Date?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +75,8 @@ class MainActivity : AppCompatActivity() {
         }
         updateButton.setOnClickListener {
             listsData.clear()
-            request.updateDate(Date(), 50)
+            lastDate=null
+            request.updateDate(0, 50)
         }
 
         graph.xAxis.valueFormatter = X_AXIS_DATE_FORMATTER
@@ -139,21 +141,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateData(list: List<SensorData>) {
-        listsData.addAll(list)
-        if (listsData.size < 150){
-            request.updateDate(list[0].date, 50)
-        } else{
-            displayData(listsData)
-        }
+        Log.i(TAG,"Got ${list.size} data: first is ${list.first().date},  last is ${list.last().date}")
+        list.filter { it.date.time > 1560000000  && it.temperature < 800 && it.humidity <= 1000 && it.soil < 1024 }.forEach { listsData[it.date] = it }
+        lastDate?.let {
+            val diff = it.time - list.first().date.time
+            Log.i(TAG,"diff: $diff")
+            if (diff > 60){
+                request.updateDate(listsData.size, 50)
+                lastDate = list.first().date
+            }
+        }?:updateLastDate(list)
+        displayData(listsData)
 
     }
 
-    fun displayData(list: List<SensorData>){
-        Log.i(TAG,"Got ${list.size} data")
+    private fun updateLastDate(list: List<SensorData>) {
+        lastDate=list.first().date
+        request.updateDate(listsData.size, 50)
+    }
 
-        val temperatures = list.map{Entry(it.date.time.toFloat(), it.temperature.toFloat()/10)}.toList()
-        val soil = list.map{Entry(it.date.time.toFloat(), it.soil.toFloat())}.toList()
-        val humidities = list.map{Entry(it.date.time.toFloat(), it.humidity.toFloat()/10)}.toList()
+    fun displayData(list: Map<Date,SensorData>){
+        Log.i(TAG,"Using ${list.size} data")
+        Log.i(TAG,"Using ${list.size} data: first is ${list.keys.first()},  last is ${list.keys.last()}")
+        val temperatures = list.map{Entry(it.key.time.toFloat(), it.value.temperature.toFloat()/10)}.toList()
+        val soil = list.map{Entry(it.key.time.toFloat(), it.value.soil.toFloat())}.toList()
+        val humidities = list.map{Entry(it.key.time.toFloat(), it.value.humidity.toFloat()/10)}.toList()
         val dataSetTemperatures = LineDataSet(temperatures, "Temperatures")
         val dataSetSoil = LineDataSet(soil, "soil")
         val dataHumidities = LineDataSet(humidities, "humidity")
@@ -167,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         dataSetSoil.color = Color.GREEN
         dataHumidities.color = Color.BLUE
 
-        val lineData = LineData(dataSetTemperatures,dataSetSoil,dataHumidities)
+        val lineData = LineData(dataSetTemperatures)
         graph.data = lineData
         graph.invalidate()
     }

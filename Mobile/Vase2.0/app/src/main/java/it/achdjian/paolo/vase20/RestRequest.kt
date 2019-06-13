@@ -12,7 +12,7 @@ import java.util.*
  */
 class RestRequest(
     sharedPreferences: SharedPreferences,
-    val mainActivity: MainActivity
+    private val mainActivity: MainActivity
 ) : HandlerThread("Vase2RestEngine"), Handler.Callback {
     private val handler: Handler
     private val restEngine = RestEngine(sharedPreferences)
@@ -35,7 +35,7 @@ class RestRequest(
     fun setOn() = handler.post (on)
     fun setOff() = handler.post(off)
     fun setTime(dawnTime: Date, sunsetTime: Date) = handler.post(PostTime(restEngine, dawnTime, sunsetTime))
-    fun updateDate(lastDate: Date, samples: Int) = handler.post(GetData(restEngine, handler, lastDate, samples))
+    fun updateDate(lastDate: Int, samples: Int) = handler.post(GetData(restEngine, handler, lastDate, samples))
 
     override fun handleMessage(message: Message?): Boolean {
         message?.let {
@@ -49,8 +49,10 @@ class RestRequest(
                 DAWN_TIME -> mainActivity.runOnUiThread { mainActivity.setDawn(arg1, arg2) }
                 SUNSET_TIME -> mainActivity.runOnUiThread { mainActivity.setSunset(arg1, arg2) }
                 SENSOR_DATA -> {
-                    val data = it.obj as List<SensorData>
-                    mainActivity.runOnUiThread { mainActivity.updateData(data.asReversed()) }
+                    if (it.obj is List<*>) {
+                        val data = it.obj as List<SensorData>
+                        mainActivity.runOnUiThread { mainActivity.updateData(data.asReversed()) }
+                    }
                 }
             }
         }
