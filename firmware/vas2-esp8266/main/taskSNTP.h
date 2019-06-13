@@ -31,5 +31,6 @@ void sntpStart(void *pvParameters);
 void initIO();
 void onLight();
 void offLight();
+void savePeriodLed();
 
 #endif //VASO2_TASKSNTP_H

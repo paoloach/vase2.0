@@ -7,14 +7,16 @@
 
 #include <esp_log.h>
 
+#include <driver/gpio.h>
+#include <esp8266/pin_mux_register.h>
 #include <lwip/err.h>
+
 #include <lwip/dns.h>
-#include <lwip/err.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
 #include <lwip/sys.h>
-
-#include <driver/gpio.h>
+#include <nvs_flash.h>
+#include <stdio.h>
 
 /* Add extras/sntp component to makefile for this include to work */
 #include "Pins.h"
@@ -25,8 +27,7 @@
 #define SNTP_SERVERS                                                           \
   "0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org"
 
-
-static const char * TAG="SNTP";
+static const char *TAG = "SNTP";
 
 #define vTaskDelayMs(ms) vTaskDelay((ms) / portTICK_PERIOD_MS)
 #define UNUSED_ARG(x) (void)x
@@ -42,9 +43,6 @@ bool lightOn = false;
 #endif
 
 #define TV2LD(TV) ((long double)TV.tv_sec + (long double)TV.tv_usec * 1.e-6)
-
-#include <esp8266/pin_mux_register.h>
-#include <stdio.h>
 
 enum OverWriteLight overWriteLight;
 /*
@@ -76,9 +74,9 @@ void sntp_impl_set_system_time_us(uint32_t secs, uint32_t us) {
     time_has_been_set_at = TV2LD(new);
   }
 
-  ESP_LOGI(TAG,"SNTP:  %20.6Lf    delta: %10.3Lf ms %3.1Lf ppm\n", TV2LD(new),
-         TV2LD(dt) * 1e3,
-         (TV2LD(dt) / (TV2LD(new) - time_has_been_set_at)) * 1e6);
+  ESP_LOGI(TAG, "SNTP:  %20.6Lf    delta: %10.3Lf ms %3.1Lf ppm\n", TV2LD(new),
+           TV2LD(dt) * 1e3,
+           (TV2LD(dt) / (TV2LD(new) - time_has_been_set_at)) * 1e6);
 
 #else /* Normal operation */
 
@@ -93,16 +91,59 @@ void sntp_impl_set_system_time_us(uint32_t secs, uint32_t us) {
 #endif
 }
 
+void savePeriodLed() {
+    esp_err_t espError;
+    espError = nvs_flash_init();
+    if (espError == ESP_OK){
+        nvs_handle nvsHandle;
+
+        espError = nvs_open("Vase2_0", NVS_READWRITE, &nvsHandle);
+        if (espError == ESP_OK){
+            nvs_set_u8(nvsHandle, "start_hour",periodLed.start.hour);
+            nvs_set_u8(nvsHandle, "start_minute",periodLed.start.minute);
+            nvs_set_u8(nvsHandle, "end_hour",periodLed.end.hour);
+            nvs_set_u8(nvsHandle, "end_minute",periodLed.end.minute);
+            nvs_close(nvsHandle);
+        }
+    }
+}
+
 void sntpStart(void *pvParameters) {
   char *servers[] = {SNTP_SERVERS};
+
+  esp_err_t espError;
 
   periodLed.start.hour = 6;
   periodLed.start.minute = 30;
   periodLed.end.hour = 21;
   periodLed.end.minute = 0;
 
+  espError = nvs_flash_init();
+  if (espError == ESP_OK){
+      nvs_handle nvsHandle;
+
+      espError = nvs_open("Vase2_0", NVS_READONLY, &nvsHandle);
+      if (espError == ESP_OK){
+          uint8_t  value;
+          if (nvs_get_u8(nvsHandle, "start_hour", &value )==ESP_OK){
+              periodLed.start.hour = value;
+          }
+          if (nvs_get_u8(nvsHandle, "start_minute", &value )==ESP_OK){
+              periodLed.start.minute = value;
+          }
+          if (nvs_get_u8(nvsHandle, "end_hour", &value )==ESP_OK){
+              periodLed.end.hour = value;
+          }
+          if (nvs_get_u8(nvsHandle, "end_minute", &value )==ESP_OK){
+              periodLed.end.hour = value;
+          }
+
+          nvs_close(nvsHandle);
+      }
+  }
+
   /* Start SNTP */
-  ESP_LOGI(TAG,"Starting SNTP... ");
+  ESP_LOGI(TAG, "Starting SNTP... ");
   initIO();
   sntp_set_update_delay(60 * 60 * 1000);
   /* Set GMT+1 zone, daylight savings off */
@@ -164,7 +205,7 @@ void initIO() {
   gpio_config_t gpioConfig;
   gpioConfig.pin_bit_mask = LED_PIN;
   gpioConfig.mode = GPIO_MODE_DEF_OUTPUT;
-  gpioConfig.pull_up_en =GPIO_PULLUP_DISABLE;
+  gpioConfig.pull_up_en = GPIO_PULLUP_DISABLE;
   gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
   gpioConfig.intr_type = GPIO_INTR_DISABLE;
 

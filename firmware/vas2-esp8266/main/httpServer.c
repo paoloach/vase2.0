@@ -104,6 +104,9 @@ esp_err_t startEndTimeHandler(httpd_req_t *req) {
   }
 
   httpd_resp_send(req, "\n", 1);
+
+  savePeriodLed();
+
   return ESP_OK;
 }
 
