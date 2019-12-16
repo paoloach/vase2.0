@@ -9,8 +9,6 @@
 #define MAX_SAMPLES 254
 #define BYTES_MAP 32
 
-
-
 struct DataSample {
     time_t timestamp;
     int16_t humidity;

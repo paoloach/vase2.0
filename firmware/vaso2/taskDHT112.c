@@ -40,12 +40,13 @@ void dht112Task(void *pvParameters) {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 
     while (true) {
-        bool status = dht_read_data(DHT_TYPE_DHT11, DHT112_LED, &humidity, &temperature);
-        if (!status) {
-            printf("error reading data from DHT22\n");
-        } else {
-            saveData();
-        }
+//        bool status = dht_read_data(DHT_TYPE_DHT11, DHT112_LED, &humidity, &temperature);
+//        if (!status) {
+//            printf("error reading data from DHT22\n");
+//        } else {
+//            saveData();
+//        }
+        saveData();
         vTaskDelay(SAMPLE_TIME*1000 / portTICK_PERIOD_MS);
     }
 }

@@ -105,6 +105,8 @@ void sntpTask(void *pvParameters) {
     periodLed.end.minute = 0;
 
 
+  onLight();
+  while(1)vTaskDelayMs(1000);
     /* Wait until we have joined AP and are assigned an IP */
     while (wifiOn == false) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -186,11 +188,13 @@ void initIO() {
 }
 
 void onLight() {
+  printf("Light on\n");
     gpio_write(LED_PIN, true);
     lightOn = true;
 }
 
 void offLight() {
-    gpio_write(LED_PIN, false);
+  printf("Light off\n");
+    gpio_write(LED_PIN, true);
     lightOn = false;
 }
