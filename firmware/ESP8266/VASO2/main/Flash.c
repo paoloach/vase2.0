@@ -9,6 +9,7 @@
 #include <nvs_flash.h>
 #include "Flash.h"
 #include "taskSNTP.h"
+#include "Light.h"
 
 #define FULL_MAP 0x00
 #define MAX_SAMPLES 254

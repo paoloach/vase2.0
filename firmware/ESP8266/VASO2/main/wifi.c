@@ -38,7 +38,6 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
                 *server = start_webserver();
             }
             xEventGroupSetBits(wifi_event_group, VASO_CONNECTED_BIT);
-            xTaskCreate(lightTask, "sntp task", 2048, NULL, 10, NULL);
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
             ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
