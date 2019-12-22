@@ -34,7 +34,7 @@ uint16_t adcRead() {
 
 void initAdc() {
     gpio_config_t gpioConfig;
-    gpioConfig.pin_bit_mask = ADC_CLK | ADC_SEL  ;
+    gpioConfig.pin_bit_mask = BIT(ADC_CLK) | BIT(ADC_SEL)  ;
     gpioConfig.mode = GPIO_MODE_DEF_OUTPUT;
     gpioConfig.pull_up_en = GPIO_PULLUP_DISABLE;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -42,7 +42,7 @@ void initAdc() {
 
     gpio_config(&gpioConfig);
 
-    gpioConfig.pin_bit_mask = ADC_DATA ;
+    gpioConfig.pin_bit_mask = BIT(ADC_DATA) ;
     gpioConfig.mode = GPIO_MODE_DEF_INPUT;
     gpioConfig.pull_up_en = GPIO_PULLUP_DISABLE;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;

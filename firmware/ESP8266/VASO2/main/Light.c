@@ -90,7 +90,7 @@ static bool isOn(void) {
 void initIO(void) {
     ESP_LOGI(TAG, "Init light");
     gpio_config_t gpioConfig;
-    gpioConfig.pin_bit_mask = LED_PIN;
+    gpioConfig.pin_bit_mask = BIT(LED_PIN);
     gpioConfig.mode = GPIO_MODE_DEF_OUTPUT;
     gpioConfig.pull_up_en = GPIO_PULLUP_DISABLE;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
