@@ -5,7 +5,7 @@
 #ifndef VAS2_ESP8266_HTTPSERVER_H
 #define VAS2_ESP8266_HTTPSERVER_H
 
-#include <http_server.h>
+#include <esp_http_server.h>
 httpd_handle_t start_webserver(void);
 void stop_webserver(void);
 extern httpd_handle_t server;

@@ -16,7 +16,7 @@
 
 
 
-struct PeriodLed periodLed;
+
 static bool lightOn = false;
 static char *TAG = "Light";
 enum OverwriteLightStatus overwriteLightStatus;
@@ -88,6 +88,7 @@ static bool isOn(void) {
 }
 
 void initIO(void) {
+    ESP_LOGI(TAG, "Init light");
     gpio_config_t gpioConfig;
     gpioConfig.pin_bit_mask = LED_PIN;
     gpioConfig.mode = GPIO_MODE_DEF_OUTPUT;
@@ -118,11 +119,13 @@ void savePeriodLed(void) {
 
 
 void onLight(void) {
+    ESP_LOGI(TAG, "Light on");
     gpio_set_level(LED_PIN, 1);
     lightOn = true;
 }
 
 void offLight(void) {
+    ESP_LOGI(TAG, "Light off");
     gpio_set_level(LED_PIN, 0);
     lightOn = false;
 }

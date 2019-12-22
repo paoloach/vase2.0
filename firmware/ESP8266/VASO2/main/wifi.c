@@ -4,21 +4,18 @@
 
 #include <esp_event_loop.h>
 #include <esp_log.h>
-#include <esp_system.h>
 #include <esp_wifi.h>
 #include <nvs_flash.h>
-#include <sys/param.h>
-#include <http_server.h>
+#include <esp_http_server.h>
 
 #include "httpServer.h"
 #include "taskSNTP.h"
-
-#define WIFI_SSID "TP-LINK_2.4"
-#define WIFI_PASS "caciottinatuttook"
+#include "Settings.h"
+#include "wifipasswd.h"
 
 #include "wifi.h"
 static const int VASO_CONNECTED_BIT = BIT0;
-static const char *TAG = "HttpServer";
+static const char *TAG = "Wifi";
 EventGroupHandle_t wifi_event_group;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event) {
@@ -27,6 +24,10 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
     switch (event->event_id) {
         case SYSTEM_EVENT_STA_START:
             ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+            esp_err_t ret = tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA ,"Vase-2.0");
+            if(ret != ESP_OK ){
+                ESP_LOGE(TAG,"failed to set hostname:%X",ret);
+            }
             ESP_ERROR_CHECK(esp_wifi_connect());
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
@@ -50,6 +51,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
             }
             break;
         default:
+            ESP_LOGI(TAG, "event: %d", event->event_id);
             break;
     }
     return ESP_OK;
@@ -58,19 +60,22 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
 void initWifi() {
     wifi_event_group = xEventGroupCreate();
     tcpip_adapter_init();
+
+
+
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, &server));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    wifi_config_t wifi_config = {
-            .sta =
-                    {
-                            .ssid = WIFI_SSID,
-                            .password = WIFI_PASS,
-                    },
-    };
+
+    wifi_config_t wifi_config;
+    memset(&wifi_config, 0, sizeof(wifi_config));
+    strncpy((char *)wifi_config.sta.ssid, Wifi_SSID, sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, Wifi_Passwd, sizeof(wifi_config.sta.password));
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+
 }

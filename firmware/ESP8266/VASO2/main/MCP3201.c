@@ -11,6 +11,7 @@
 static const char * TAG="ADC";
 
 uint16_t adcRead() {
+    ESP_LOGI(TAG,"Start sample");
     uint16_t result=0;
     gpio_set_level(ADC_SEL, 0);
     gpio_set_level(ADC_CLK, 1);
@@ -33,7 +34,7 @@ uint16_t adcRead() {
 
 void initAdc() {
     gpio_config_t gpioConfig;
-    gpioConfig.pin_bit_mask = ADC_CLK | ADC_SEL ;
+    gpioConfig.pin_bit_mask = ADC_CLK | ADC_SEL  ;
     gpioConfig.mode = GPIO_MODE_DEF_OUTPUT;
     gpioConfig.pull_up_en = GPIO_PULLUP_DISABLE;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;

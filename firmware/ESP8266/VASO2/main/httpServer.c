@@ -1,24 +1,19 @@
 //
 // Created by paolo on 30/05/19.
 //
-#include <esp_event_loop.h>
 #include <esp_log.h>
-#include <esp_system.h>
-#include <esp_wifi.h>
 #include <nvs_flash.h>
-#include <sys/param.h>
-
-#include "httpServer.h"
 //#include "taskDHT112.h"
 #include "Flash.h"
 
 
 #include <esp_http_server.h>
+#include <freertos/event_groups.h>
 #include "MCP3201.h"
 #include "Light.h"
+#include "Settings.h"
+#include "wifi.h"
 
-#define WIFI_SSID "TWSP-2_4"
-#define WIFI_PASS "caciottinatuttook"
 
 static const char *STATUS_200 = "200 OK";
 static const char *STATUS_201 = "201 CREATE";
@@ -56,6 +51,7 @@ esp_err_t onHandler(httpd_req_t *req) {
 }
 
 esp_err_t offHandler(httpd_req_t *req) {
+    ESP_LOGI(TAG,"Off handler");
     offLight();
     setOverwriteLightStatus( OFF_LIGHT);
     httpd_resp_set_status(req, STATUS_201);
@@ -139,6 +135,31 @@ esp_err_t commonGet(httpd_req_t *req, const char *field, int16_t value) {
     strcpy(buffer, field);
     sprintf(buffer + strlen(buffer), ": %d\n", value);
     httpd_resp_send(req, buffer, -1);
+    return ESP_OK;
+}
+
+
+esp_err_t httpSetSampleInterval(httpd_req_t *req) {
+    char buf[10];
+    char * end;
+    int ret = httpd_req_recv(req, buf, sizeof(buf));
+    if (ret > 0){
+        uint16_t newInterval = strtol(buf, &end, 10 );
+        if (end > buf) {
+            if (newInterval > 0) {
+                setSolCheckInterval(newInterval);
+            } else {
+                ESP_LOGE(TAG, "Invalid negative value %s", buf);
+                httpd_resp_send(req, "Invalid negative value\n\r", -1);
+                httpd_resp_set_status(req, STATUS_400);
+            }
+        } else {
+            ESP_LOGE(TAG, "Invalid value: %s", buf);
+            httpd_resp_send(req, "Invalid value\n\r", -1);
+            httpd_resp_set_status(req, STATUS_400);
+        }
+    }
+    httpd_resp_send(req, "\n\r", -1);
     return ESP_OK;
 }
 
@@ -244,13 +265,17 @@ httpd_uri_t getSoil = {.uri = "/soil",
         .method = HTTP_GET,
         .handler = httpSoilMoistureHandler,
         .user_ctx = NULL};
+httpd_uri_t setSampleInterval = {.uri = "/sampleInterval",
+        .method = HTTP_POST,
+        .handler = httpSetSampleInterval,
+        .user_ctx = NULL};
 httpd_uri_t getData = {
         .uri = "/data", .method = HTTP_GET, .handler = httpData, .user_ctx = 0};
 
 httpd_handle_t start_webserver(void) {
     httpd_handle_t httpServer = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 15;
 
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     if (httpd_start(&httpServer, &config) == ESP_OK) {
@@ -263,7 +288,8 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(httpServer, &postOff);
         httpd_register_uri_handler(httpServer, &postOnTime);
         httpd_register_uri_handler(httpServer, &postOffTime);
-
+        httpd_register_uri_handler(httpServer, &setSampleInterval);
+        ESP_LOGI(TAG, "HTTP SERVER STARTED");
         return httpServer;
     }
 
@@ -271,7 +297,9 @@ httpd_handle_t start_webserver(void) {
     return NULL;
 }
 
-void stop_webserver(void) { httpd_stop(server); }
+void stop_webserver(void) {
+    ESP_LOGI(TAG,"Web server stop");
+    httpd_stop(server); }
 
 esp_err_t methodNotSupported(httpd_req_t *connData) {
     const char *msg = "Request method is not supported by server\n";

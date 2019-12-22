@@ -12,7 +12,7 @@
 #include "taskSNTP.h"
 
 
-static const char *TIME_ZONE = "EUROPE/ROME+1";
+static const char *TIME_ZONE = "EUROPE/ROME+2";
 static const char *TAG = "SNTP";
 
 
@@ -74,11 +74,11 @@ static void sntpTask(void *arg) {
             ESP_LOGE(TAG, "The current date/time error");
         } else {
             strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-            ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+            ESP_LOGI(TAG, "The current date/time in Rome is: %s", strftime_buf);
         }
 
         ESP_LOGI(TAG, "Free heap size: %d\n", esp_get_free_heap_size());
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(100000 / portTICK_RATE_MS);
     }
 }
 

@@ -33,10 +33,7 @@ static uint16_t lastSector;
 void initFlash(void) {
     esp_err_t espError;
 
-    periodLed.start.hour = 6;
-    periodLed.start.minute = 30;
-    periodLed.end.hour = 21;
-    periodLed.end.minute = 0;
+
 
 //    espError = nvs_flash_init_partition(DATA_PARTITION_NAME);
 //    if (espError != ESP_OK){
@@ -45,29 +42,6 @@ void initFlash(void) {
 //
 //    lastSector = getLastSectorFromFlash(0);
 
-    espError = nvs_flash_init();
-    if (espError == ESP_OK){
-        nvs_handle nvsHandle;
-
-        espError = nvs_open("Vase2_0", NVS_READONLY, &nvsHandle);
-        if (espError == ESP_OK){
-            uint8_t  value;
-            if (nvs_get_u8(nvsHandle, "start_hour", &value )==ESP_OK){
-                periodLed.start.hour = value;
-            }
-            if (nvs_get_u8(nvsHandle, "start_minute", &value )==ESP_OK){
-                periodLed.start.minute = value;
-            }
-            if (nvs_get_u8(nvsHandle, "end_hour", &value )==ESP_OK){
-                periodLed.end.hour = value;
-            }
-            if (nvs_get_u8(nvsHandle, "end_minute", &value )==ESP_OK){
-                periodLed.end.minute = value;
-            }
-
-            nvs_close(nvsHandle);
-        }
-    }
 }
 
 struct DataSample *getSamples(uint16_t sector) {
@@ -76,6 +50,10 @@ struct DataSample *getSamples(uint16_t sector) {
 }
 
 uint16_t getLastSector(time_t before) {
+    return 0;
+}
+
+int16_t getLastSample() {
     return 0;
 }
 
