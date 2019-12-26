@@ -5,27 +5,41 @@
 #include <driver/gpio.h>
 #include <stdbool.h>
 #include <esp_log.h>
+#include <unistd.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include "MCP3201.h"
 #include "Pins.h"
 
 static const char * TAG="ADC";
 
+void adcTask(void *arg);
+
 uint16_t adcRead() {
     ESP_LOGI(TAG,"Start sample");
     uint16_t result=0;
     gpio_set_level(ADC_SEL, 0);
+    ets_delay_us(1);
     gpio_set_level(ADC_CLK, 1);
+    ets_delay_us(1);
     gpio_set_level(ADC_CLK, 0);
+    ets_delay_us(1);
     gpio_set_level(ADC_CLK, 1);
+    ets_delay_us(1);
     gpio_set_level(ADC_CLK, 0);
+    ets_delay_us(1);
     gpio_set_level(ADC_CLK, 1);
+    ets_delay_us(1);
     result = gpio_get_level(ADC_DATA);
     for(int i=0; i< 12; i++){
         gpio_set_level(ADC_CLK, 0);
+        ets_delay_us(1);
         gpio_set_level(ADC_CLK, 1);
+        ets_delay_us(1);
         result = (result << 1) | gpio_get_level(ADC_DATA);
     }
-    gpio_set_level(ADC_SEL, 0);
+    gpio_set_level(ADC_SEL, 1);
+    ets_delay_us(1);
     if (result & 0x1000){
         ESP_LOGE(TAG, "error reading ADC: nullbit is 1");
     }
@@ -54,4 +68,15 @@ void initAdc() {
 
     gpio_set_level(ADC_SEL, 1);
     gpio_set_level(ADC_CLK, 0);
+
+    xTaskCreate(adcTask, "adc task", 1024, NULL, 10, NULL);
+}
+
+
+void adcTask(void *arg) {
+    while(true) {
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        uint16_t val = adcRead();
+        ESP_LOGI(TAG, "adc val: %u", val);
+    }
 }
