@@ -14,9 +14,6 @@
 #include "Light.h"
 #include "Pins.h"
 
-
-
-
 static bool lightOn = false;
 static char *TAG = "Light";
 enum OverwriteLightStatus overwriteLightStatus;
@@ -98,23 +95,6 @@ void initIO(void) {
 
     gpio_config(&gpioConfig);
     offLight();
-}
-
-void savePeriodLed(void) {
-    esp_err_t espError;
-    espError = nvs_flash_init();
-    if (espError == ESP_OK) {
-        nvs_handle nvsHandle;
-
-        espError = nvs_open("Vase2_0", NVS_READWRITE, &nvsHandle);
-        if (espError == ESP_OK) {
-            nvs_set_u8(nvsHandle, "start_hour", periodLed.start.hour);
-            nvs_set_u8(nvsHandle, "start_minute", periodLed.start.minute);
-            nvs_set_u8(nvsHandle, "end_hour", periodLed.end.hour);
-            nvs_set_u8(nvsHandle, "end_minute", periodLed.end.minute);
-            nvs_close(nvsHandle);
-        }
-    }
 }
 
 

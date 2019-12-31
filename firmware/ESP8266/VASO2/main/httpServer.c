@@ -32,28 +32,28 @@ static struct TimeLed decodeTime(char *data);
 
 static int commonGet(httpd_req_t *connData, const char *field, int16_t value);
 
-esp_err_t whoAreYouHandler(httpd_req_t *req) {
+esp_err_t aboutHandler(httpd_req_t *req) {
     if (req->method != HTTP_GET) {
         return methodNotSupported(req);
     }
     httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
-    httpd_resp_send(req, "I am Vase 2.0\n", -1);
+    httpd_resp_send(req, "Vase 2.0\n", -1);
 
     return ESP_OK;
 }
 
-esp_err_t onHandler(httpd_req_t *req) {
+esp_err_t postOnHandler(httpd_req_t *req) {
     onLight();
-    setOverwriteLightStatus( ON_LIGHT);
+    setOverwriteLightStatus(ON_LIGHT);
     httpd_resp_set_status(req, STATUS_201);
     httpd_resp_send(req, "\n", -1);
     return ESP_OK;
 }
 
-esp_err_t offHandler(httpd_req_t *req) {
-    ESP_LOGI(TAG,"Off handler");
+esp_err_t postOffHandler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "Off handler");
     offLight();
-    setOverwriteLightStatus( OFF_LIGHT);
+    setOverwriteLightStatus(OFF_LIGHT);
     httpd_resp_set_status(req, STATUS_201);
     httpd_resp_send(req, "\n", -1);
     return ESP_OK;
@@ -89,7 +89,7 @@ esp_err_t getStatusHandler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t startEndTimeHandler(httpd_req_t *req) {
+esp_err_t postStartEndTimeHandler(httpd_req_t *req) {
     char buf[5];
     int ret = httpd_req_recv(req, buf, sizeof(buf));
     if (ret == 5) {
@@ -122,7 +122,7 @@ esp_err_t startEndTimeHandler(httpd_req_t *req) {
 //  return commonGet(connData, "humidity", humidity);
 //}
 
-esp_err_t httpSoilMoistureHandler(httpd_req_t *connData) {
+esp_err_t getSoilMoistureHandler(httpd_req_t *connData) {
     uint16_t soilMoisture = adcRead();
     return commonGet(connData, "soilMoisture", soilMoisture);
 }
@@ -139,12 +139,12 @@ esp_err_t commonGet(httpd_req_t *req, const char *field, int16_t value) {
 }
 
 
-esp_err_t httpSetSampleInterval(httpd_req_t *req) {
+esp_err_t setSampleIntervalHandler(httpd_req_t *req) {
     char buf[10];
-    char * end;
+    char *end;
     int ret = httpd_req_recv(req, buf, sizeof(buf));
-    if (ret > 0){
-        uint16_t newInterval = strtol(buf, &end, 10 );
+    if (ret > 0) {
+        uint16_t newInterval = strtol(buf, &end, 10);
         if (end > buf) {
             if (newInterval > 0) {
                 setSolCheckInterval(newInterval);
@@ -188,10 +188,10 @@ esp_err_t httpData(httpd_req_t *req) {
             if (httpd_req_get_url_query_str(req, buffer, bufferLen) == ESP_OK) {
                 char param[32];
                 if (httpd_query_key_value(buffer, "start", param, sizeof(param)) == ESP_OK) {
-                    start = strtol(param,NULL,10 );
+                    start = strtol(param, NULL, 10);
                 }
                 if (httpd_query_key_value(buffer, "size", param, sizeof(param)) == ESP_OK) {
-                    size = strtol(param,NULL,10 );
+                    size = strtol(param, NULL, 10);
                 }
             }
             free(buffer);
@@ -239,48 +239,28 @@ esp_err_t httpData(httpd_req_t *req) {
     return ESP_OK;
 }
 
-httpd_uri_t getWhoAreYou = {.uri = "/who_are_you",
-        .method = HTTP_GET,
-        .handler = whoAreYouHandler,
-        .user_ctx = NULL};
-httpd_uri_t postOn = {
-        .uri = "/on", .method = HTTP_POST, .handler = onHandler, .user_ctx = NULL};
-httpd_uri_t postOff = {.uri = "/off",
-        .method = HTTP_POST,
-        .handler = offHandler,
-        .user_ctx = NULL};
-httpd_uri_t getStatus = {.uri = "/status",
-        .method = HTTP_GET,
-        .handler = getStatusHandler,
-        .user_ctx = NULL};
-httpd_uri_t postOnTime = {.uri = "/onTime",
-        .method = HTTP_POST,
-        .handler = startEndTimeHandler,
-        .user_ctx = 0};
-httpd_uri_t postOffTime = {.uri = "/offTime",
-        .method = HTTP_POST,
-        .handler = startEndTimeHandler,
-        .user_ctx = (void *) 1};
-httpd_uri_t getSoil = {.uri = "/soil",
-        .method = HTTP_GET,
-        .handler = httpSoilMoistureHandler,
-        .user_ctx = NULL};
-httpd_uri_t setSampleInterval = {.uri = "/sampleInterval",
-        .method = HTTP_POST,
-        .handler = httpSetSampleInterval,
-        .user_ctx = NULL};
-httpd_uri_t getData = {
-        .uri = "/data", .method = HTTP_GET, .handler = httpData, .user_ctx = 0};
-
 httpd_handle_t start_webserver(void) {
     httpd_handle_t httpServer = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = 15;
 
+    httpd_uri_t getWhoAreYou = {.uri = "/who_are_you", .method = HTTP_GET, .handler = aboutHandler, .user_ctx = NULL};
+    httpd_uri_t getAbout = {.uri = "/about", .method = HTTP_GET, .handler = aboutHandler, .user_ctx = NULL};
+    httpd_uri_t postOn = {.uri = "/on", .method = HTTP_POST, .handler = postOnHandler, .user_ctx = NULL};
+    httpd_uri_t postOff = {.uri = "/off", .method = HTTP_POST, .handler = postOffHandler, .user_ctx = NULL};
+    httpd_uri_t getStatus = {.uri = "/status", .method = HTTP_GET, .handler = getStatusHandler, .user_ctx = NULL};
+    httpd_uri_t postOnTime = {.uri = "/onTime", .method = HTTP_POST, .handler = postStartEndTimeHandler, .user_ctx = 0};
+    httpd_uri_t postOffTime = {.uri = "/offTime", .method = HTTP_POST, .handler = postStartEndTimeHandler, .user_ctx = (void *) 1};
+    httpd_uri_t getSoil = {.uri = "/soil", .method = HTTP_GET, .handler = getSoilMoistureHandler, .user_ctx = NULL};
+    httpd_uri_t setSampleInterval = {.uri = "/sampleInterval", .method = HTTP_POST, .handler = setSampleIntervalHandler, .user_ctx = NULL};
+    httpd_uri_t getData = {.uri = "/data", .method = HTTP_GET, .handler = httpData, .user_ctx = 0};
+
+
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     if (httpd_start(&httpServer, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(httpServer, &getWhoAreYou);
+        httpd_register_uri_handler(httpServer, &getAbout);
         httpd_register_uri_handler(httpServer, &getStatus);
         httpd_register_uri_handler(httpServer, &getSoil);
         httpd_register_uri_handler(httpServer, &getData);
@@ -298,8 +278,9 @@ httpd_handle_t start_webserver(void) {
 }
 
 void stop_webserver(void) {
-    ESP_LOGI(TAG,"Web server stop");
-    httpd_stop(server); }
+    ESP_LOGI(TAG, "Web server stop");
+    httpd_stop(server);
+}
 
 esp_err_t methodNotSupported(httpd_req_t *connData) {
     const char *msg = "Request method is not supported by server\n";

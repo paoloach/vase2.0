@@ -25,7 +25,7 @@ void startLight(void );
 void setOverwriteLightStatus(enum OverwriteLightStatus newOverwriteStatus);
 void onLight(void);
 void offLight(void);
-void savePeriodLed(void);
+
 bool isLightOn();
 
 extern struct PeriodLed periodLed;

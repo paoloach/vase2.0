@@ -34,14 +34,6 @@ void initFlash(void) {
     esp_err_t espError;
 
 
-
-//    espError = nvs_flash_init_partition(DATA_PARTITION_NAME);
-//    if (espError != ESP_OK){
-//        ESP_LOGE(TAG, "error initializing data partition: %d", espError);
-//    }
-//
-//    lastSector = getLastSectorFromFlash(0);
-
 }
 
 struct DataSample *getSamples(uint16_t sector) {

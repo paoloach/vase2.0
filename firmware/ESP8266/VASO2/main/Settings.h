@@ -15,5 +15,6 @@ extern char  Wifi_Passwd[64];
 
 void initSettings();
 void setSolCheckInterval(uint16_t newCheckInterval);
+void savePeriodLed(void);
 
 #endif //VASO2_SETTINGS_H
