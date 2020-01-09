@@ -8,6 +8,8 @@
 #include "SoilService.h"
 #include "Settings.h"
 #include "MCP3201.h"
+#include "DataChunk.h"
+#include "Flash.h"
 
 static const char * TAG="SoilService";
 static void soilServiceTask(void *);
@@ -17,9 +19,12 @@ void initSoilServiceTask() {
 }
 
 static void soilServiceTask(void *args){
+    struct DataSample sample;
     while(1){
-        vTaskDelay(((ulong )soilCheckInterval*1000) / portTICK_PERIOD_MS);
+        vTaskDelay(((ulong )sampleIntervalMinutes * 1000) / portTICK_PERIOD_MS);
         uint16_t soil = adcRead();
         ESP_LOGI(TAG, "soil: %d", soil);
+        sample.soil = soil;
+        saveSample(&sample);
     }
 }

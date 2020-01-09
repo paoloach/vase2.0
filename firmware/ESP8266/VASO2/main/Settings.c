@@ -9,7 +9,7 @@
 #include "wifipasswd.h"
 
 
-static char *const KEY_SOL_CHECK_INTERVAL = "soilCheckInterval";
+static char *const KEY_SOL_CHECK_INTERVAL = "sampleIntervalMinute";
 char Wifi_SSID[32];
 char Wifi_Passwd[64];
 static char *const NVS_OPEN = "Vase2_0";
@@ -20,14 +20,14 @@ static char *const START_MINUTE = "start_minute";
 static char *const END_HOUR = "end_hour";
 static char *const END_MINUTE = "end_minute";
 struct PeriodLed periodLed;
-uint16_t soilCheckInterval;
+uint16_t sampleIntervalMinutes;
 
 void initSettings() {
     periodLed.start.hour = 6;
     periodLed.start.minute = 30;
     periodLed.end.hour = 21;
     periodLed.end.minute = 0;
-    soilCheckInterval = 60;
+    sampleIntervalMinutes = 1;
 
     esp_err_t espError;
     espError = nvs_flash_init();
@@ -50,7 +50,7 @@ void initSettings() {
                 periodLed.end.minute = value;
             }
 
-            nvs_get_u16(nvsHandle, KEY_SOL_CHECK_INTERVAL, &soilCheckInterval);
+            nvs_get_u16(nvsHandle, KEY_SOL_CHECK_INTERVAL, &sampleIntervalMinutes);
 
             size_t size = sizeof(Wifi_SSID);
             if (nvs_get_str(nvsHandle, KET_WIFI_SSID, Wifi_SSID, &size) != ESP_OK) {
@@ -85,14 +85,14 @@ void savePeriodLed(void) {
     }
 }
 
-void setSolCheckInterval(uint16_t newCheckInterval) {
-    soilCheckInterval = newCheckInterval;
+void setSampleIntervalMinutes(uint16_t newCheckInterval) {
+    sampleIntervalMinutes = newCheckInterval;
 
     esp_err_t espError;
     nvs_handle nvsHandle;
     espError = nvs_open(NVS_OPEN, NVS_READONLY, &nvsHandle);
     if (espError == ESP_OK) {
-        nvs_set_u16(nvsHandle, KEY_SOL_CHECK_INTERVAL, soilCheckInterval);
+        nvs_set_u16(nvsHandle, KEY_SOL_CHECK_INTERVAL, sampleIntervalMinutes);
     }
     nvs_close(nvsHandle);
 }

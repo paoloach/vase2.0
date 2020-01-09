@@ -9,12 +9,12 @@
 
 #include <stdint.h>
 
-extern uint16_t soilCheckInterval;
+extern uint16_t sampleIntervalMinutes;
 extern char  Wifi_SSID[32];
 extern char  Wifi_Passwd[64];
 
 void initSettings();
-void setSolCheckInterval(uint16_t newCheckInterval);
+void setSampleIntervalMinutes(uint16_t newCheckInterval);
 void savePeriodLed(void);
 
 #endif //VASO2_SETTINGS_H

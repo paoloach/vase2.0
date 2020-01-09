@@ -8,18 +8,29 @@
 #include <stdint.h>
 #include <time.h>
 
-struct DataSample {
-    time_t timestamp;
-    int16_t humidity;
-    int16_t temperature;
-    uint16_t soil;
-}  __attribute__ ((aligned (4)));
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 
 void initFlash(void);
 
-uint16_t getLastSector(time_t before);
-struct DataSample *getSamples(uint16_t sector);
-int16_t getLastSample();
+time_t getChunkContaining(timer_t time);
+
+time_t getFirstDataChunk();
+
+time_t getLastDataChunk();
+
+void setFirstDataChunk(time_t day);
+
+void setLastDataChunk(time_t day);
+
+void saveSample(struct DataSample *sample);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //VASO2_FLASH_H
