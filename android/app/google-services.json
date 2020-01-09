@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1054011003990",
+    "firebase_url": "https://vase2-92db5.firebaseio.com",
+    "project_id": "vase2-92db5",
+    "storage_bucket": "vase2-92db5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054011003990:android:28231b1f941ed8088017f7",
+        "android_client_info": {
+          "package_name": "it.achdjian.vase2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1054011003990-ke3sdqa0th4mv8km7i1jmiiqp198hl19.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "it.achdjian.vase2",
+            "certificate_hash": "1cdff6dd334315442a1f71bc9a35f4a22f62263c"
+          }
+        },
+        {
+          "client_id": "1054011003990-si771tmb69j2ajdn8r7sct6mqf5jf4uq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_kXkqheBcxqlURwn_MLaXqLYC0yCHTls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1054011003990-si771tmb69j2ajdn8r7sct6mqf5jf4uq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
