@@ -9,6 +9,6 @@
 
 void initWifi();
 
-extern EventGroupHandle_t wifi_event_group;
+
 
 #endif //VAS2_ESP8266_WIFI_H

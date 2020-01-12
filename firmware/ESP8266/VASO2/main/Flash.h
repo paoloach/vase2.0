@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <time.h>
+#include "DataSample.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,6 @@ extern "C" {
 
 void initFlash(void);
 
-time_t getChunkContaining(timer_t time);
-
 time_t getFirstDataChunk();
 
 time_t getLastDataChunk();
@@ -28,6 +27,8 @@ void setFirstDataChunk(time_t day);
 void setLastDataChunk(time_t day);
 
 void saveSample(struct DataSample *sample);
+
+void flashDataErase();
 
 #ifdef __cplusplus
 }

@@ -8,8 +8,9 @@
 #include "SoilService.h"
 #include "Settings.h"
 #include "MCP3201.h"
-#include "DataChunk.h"
 #include "Flash.h"
+#include "wifi.h"
+#include "GroupSignals.h"
 
 static const char * TAG="SoilService";
 static void soilServiceTask(void *);
@@ -20,8 +21,10 @@ void initSoilServiceTask() {
 
 static void soilServiceTask(void *args){
     struct DataSample sample;
+    ESP_LOGI(TAG, "Sample interval: %d minute", sampleIntervalMinutes);
+    xEventGroupWaitBits(wifi_event_group, TIME_VALID,  false, true, portMAX_DELAY);
     while(1){
-        vTaskDelay(((ulong )sampleIntervalMinutes * 1000) / portTICK_PERIOD_MS);
+        vTaskDelay(((ulong )sampleIntervalMinutes * 60000) / portTICK_PERIOD_MS);
         uint16_t soil = adcRead();
         ESP_LOGI(TAG, "soil: %d", soil);
         sample.soil = soil;

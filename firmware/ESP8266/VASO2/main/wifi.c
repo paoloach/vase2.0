@@ -14,7 +14,8 @@
 #include "wifipasswd.h"
 
 #include "wifi.h"
-static const int VASO_CONNECTED_BIT = BIT0;
+#include "GroupSignals.h"
+
 static const char *TAG = "Wifi";
 EventGroupHandle_t wifi_event_group;
 

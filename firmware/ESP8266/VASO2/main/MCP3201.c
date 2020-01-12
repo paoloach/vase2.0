@@ -16,7 +16,6 @@ static const char * TAG="ADC";
 void adcTask(void *arg);
 
 uint16_t adcRead() {
-    ESP_LOGI(TAG,"Start sample");
     uint16_t result=0;
     gpio_set_level(ADC_SEL, 0);
     ets_delay_us(1);
@@ -68,15 +67,5 @@ void initAdc() {
 
     gpio_set_level(ADC_SEL, 1);
     gpio_set_level(ADC_CLK, 0);
-
-    xTaskCreate(adcTask, "adc task", 1024, NULL, 10, NULL);
 }
 
-
-void adcTask(void *arg) {
-    while(true) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        uint16_t val = adcRead();
-        ESP_LOGI(TAG, "adc val: %u", val);
-    }
-}

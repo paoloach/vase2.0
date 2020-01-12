@@ -19,6 +19,7 @@
 #include "Light.h"
 #include "MCP3201.h"
 #include "Settings.h"
+#include "SoilService.h"
 
 static const char * TAG="Main";
 
@@ -48,4 +49,5 @@ void app_main() {
     initAdc();
     startSntpTask();
     startLight();
+    initSoilServiceTask();
 }

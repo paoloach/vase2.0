@@ -8,17 +8,13 @@
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
+#include "DataSample.h"
 
 #define MAX_SAMPLES 100
 
 static const uint32_t MAGIC_V1=0x483fe320;
 
-struct DataSample {
-    uint16_t offset;
-    int16_t humidity;
-    int16_t temperature;
-    uint16_t soil;
-}  __attribute__ ((aligned (4)));
+
 
 struct DataChunk {
     DataChunk(){}

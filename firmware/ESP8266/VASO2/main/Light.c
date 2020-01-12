@@ -61,7 +61,7 @@ void lightTask(void *arg) {
                 default:;
             }
         }
-        vTaskDelay(20000 / portTICK_PERIOD_MS);
+        vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 }
 

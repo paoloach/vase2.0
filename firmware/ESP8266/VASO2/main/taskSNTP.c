@@ -10,10 +10,11 @@
 
 #include "wifi.h"
 #include "taskSNTP.h"
-
+#include "GroupSignals.h"
 
 static const char *TIME_ZONE = "EUROPE/ROME+2";
 static const char *TAG = "SNTP";
+static const uint32_t UPDATE_SNTP_TASK_MINUTE=10;
 
 
 static void sntpInit(void);
@@ -22,7 +23,7 @@ static void obtainTime(void);
 
 static void sntpTask(void *arg);
 
-static const int VASO_CONNECTED_BIT = BIT0;
+
 
 void startSntpTask() {
     // SNTP service uses LwIP, please allocate large stack space.
@@ -45,6 +46,7 @@ static void obtainTime(void) {
         time(&now);
         localtime_r(&now, &timeinfo);
     }
+
 }
 
 
@@ -65,6 +67,7 @@ static void sntpTask(void *arg) {
     setenv("TZ", TIME_ZONE, 1);
     tzset();
 
+    xEventGroupSetBits(wifi_event_group, TIME_VALID);
     while (1) {
         // update 'now' variable with current time
         time(&now);
@@ -78,7 +81,7 @@ static void sntpTask(void *arg) {
         }
 
         ESP_LOGI(TAG, "Free heap size: %d\n", esp_get_free_heap_size());
-        vTaskDelay(100000 / portTICK_RATE_MS);
+        vTaskDelay(UPDATE_SNTP_TASK_MINUTE*60*1000 / portTICK_RATE_MS);
     }
 }
 

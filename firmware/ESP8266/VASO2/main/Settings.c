@@ -4,11 +4,13 @@
 
 #include <nvs_flash.h>
 #include <string.h>
+#include <esp_log.h>
 #include "Settings.h"
 #include "Light.h"
 #include "wifipasswd.h"
 
 
+static const char * TAG="Setting";
 static char *const KEY_SOL_CHECK_INTERVAL = "sampleIntervalMinute";
 char Wifi_SSID[32];
 char Wifi_Passwd[64];
@@ -33,8 +35,7 @@ void initSettings() {
     espError = nvs_flash_init();
     if (espError == ESP_OK) {
         nvs_handle nvsHandle;
-
-        espError = nvs_open(NVS_OPEN, NVS_READONLY, &nvsHandle);
+        espError = nvs_open(NVS_OPEN, NVS_READWRITE, &nvsHandle);
         if (espError == ESP_OK) {
             uint8_t value;
             if (nvs_get_u8(nvsHandle, START_HOUR, &value) == ESP_OK) {
@@ -54,16 +55,22 @@ void initSettings() {
 
             size_t size = sizeof(Wifi_SSID);
             if (nvs_get_str(nvsHandle, KET_WIFI_SSID, Wifi_SSID, &size) != ESP_OK) {
+                ESP_LOGW(TAG, "SSID not found. Using the default one" );
                 strncpy(Wifi_SSID, WIFI_SSID, sizeof(Wifi_SSID));
             }
 
             size = sizeof(Wifi_Passwd);
             if (nvs_get_str(nvsHandle, KET_WIFI_PASSWD, Wifi_Passwd, &size) != ESP_OK) {
+                ESP_LOGW(TAG, "PASSWORD not found. Using the default one" );
                 strncpy(Wifi_Passwd, WIFI_PASS, sizeof(Wifi_Passwd));
             }
 
             nvs_close(nvsHandle);
+        } else {
+            ESP_LOGE(TAG, "Error open namespace partition: %04X", espError);
         }
+    } else {
+        ESP_LOGE(TAG, "Error init flash: %04X", espError);
     }
 
 }

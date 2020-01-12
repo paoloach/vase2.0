@@ -13,6 +13,7 @@
 #include "Light.h"
 #include "Settings.h"
 #include "wifi.h"
+#include "DataService.h"
 
 
 static const char *STATUS_200 = "200 OK";
@@ -163,6 +164,12 @@ esp_err_t setSampleIntervalHandler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t eraseAllDataHandler(httpd_req_t *req) {
+    flashDataErase();
+    httpd_resp_send(req, "\n\r", -1);
+    return ESP_OK;
+
+}
 
 httpd_handle_t start_webserver(void) {
     httpd_handle_t httpServer = NULL;
@@ -179,6 +186,7 @@ httpd_handle_t start_webserver(void) {
     httpd_uri_t getSoil = {.uri = "/soil", .method = HTTP_GET, .handler = getSoilMoistureHandler, .user_ctx = NULL};
     httpd_uri_t setSampleInterval = {.uri = "/sampleInterval", .method = HTTP_POST, .handler = setSampleIntervalHandler, .user_ctx = NULL};
     httpd_uri_t getData = {.uri = "/data", .method = HTTP_GET, .handler = httpData, .user_ctx = 0};
+    httpd_uri_t postDataErase = {.uri = "/eraseData", .method = HTTP_POST, .handler = eraseAllDataHandler, .user_ctx = 0};
 
 
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
@@ -194,6 +202,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(httpServer, &postOnTime);
         httpd_register_uri_handler(httpServer, &postOffTime);
         httpd_register_uri_handler(httpServer, &setSampleInterval);
+        httpd_register_uri_handler(httpServer, &postDataErase);
         ESP_LOGI(TAG, "HTTP SERVER STARTED");
         return httpServer;
     }
