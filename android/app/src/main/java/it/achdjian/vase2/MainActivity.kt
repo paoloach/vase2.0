@@ -1,72 +1,151 @@
 package it.achdjian.vase2
 
-import android.content.ContentValues.TAG
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.Composable
+import androidx.compose.*
+import androidx.ui.core.ContextAmbient
 import androidx.ui.core.Text
 import androidx.ui.core.dp
 import androidx.ui.core.setContent
+import androidx.ui.graphics.imageFromResource
 import androidx.ui.layout.*
-import androidx.ui.material.Button
+import androidx.ui.material.AppBarIcon
 import androidx.ui.material.MaterialTheme
+import androidx.ui.material.TopAppBar
 import androidx.ui.tooling.preview.Preview
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
+import it.achdjian.vase2.ui.ActualStatus
+import it.achdjian.vase2.ui.ConnectionMessage
+
+private const val TAG = "Main"
+
+@Model
+class Status {
+    var connected = false
+    var actualSoil = 123
+}
+
+val relink=+state { false }
+
+@Model
+object resumed {
+    var triggered = true
+}
+
+val status = Status()
 
 class MainActivity : AppCompatActivity() {
+    private var composed = false
+
+    val showPreferences = {
+        val intent = Intent(this, SettingsActivity::class.java)
+        startActivity(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerToFirebase()
         setContent {
-            MaterialTheme {
-                Greeting()
-                ButtonRegToken()
+            about()
+            mainContent(showPreferences, resumed)
+            composed = true
+
+        }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        resumed.triggered = true
+    }
+
+}
+
+@Composable
+fun mainContent(
+    showPreferences: () -> Unit,
+    resumed: resumed
+) {
+    if (resumed.triggered) {
+        about()
+        resumed.triggered = false
+    }
+    mainView(showPreferences)
+
+}
+
+@Composable
+fun mainView(
+    showPreferences: () -> Unit
+) {
+    MaterialTheme {
+
+        FlexColumn(crossAxisAlignment = CrossAxisAlignment.Stretch) {
+            inflexible {
+                topBar(showPreferences = showPreferences)
+            }
+            inflexible {
+                Padding(top=16.dp) {
+
+                    ConnectionMessage()
+                }
+            }
+            inflexible {
+                if (status.connected) {
+                    Padding(top=16.dp) {
+
+                        ActualStatus()
+                    }
+                }
             }
         }
     }
 }
 
-@Composable
-fun ButtonRegToken() {
-    Column() {
 
-        Padding(padding = 8.dp) {
-            FlowRow() {
-                Text(text = "Firebase token")
-                Text(text = token.token ?: "NOT AVAILABLE")
+@Composable
+fun topBar(showPreferences: () -> Unit) {
+    val context = +ambient(ContextAmbient)
+    val navigationImage by lazy {
+        {
+            imageFromResource(
+                context.resources,
+                R.mipmap.baseline_settings_applications_black_18dp
+            )
+        }
+    }
+    Container(MaxHeight(30.dp)) {
+        TopAppBar(
+            title = { Text("Vase2..0") },
+            actionData = listOf(navigationImage())
+        ) { action ->
+            AppBarIcon(action) {
+                showPreferences()
+                Log.i(TAG, "Click")
             }
         }
     }
 }
+//
+//@Composable
+//fun ButtonRegToken(navigationImage: () -> Image) {
+//
+//    Column() {
+//
+//        Padding(padding = 8.dp) {
+//            FlowRow() {
+//                Text(text = "Firebase token")
+//                Text(text = token.token ?: "NOT AVAILABLE")
+//            }
+//        }
+//    }
+//}
 
-@Composable
-fun Connection() {
-    Padding(padding = 8.dp) {
-        FlowRow() {
-
-            Text("Vase IP:")
-            Ip()
-        }
-    }
-    Button(text = "Connect")
-
-}
-
-@Composable
-fun Greeting() {
-    Text(text = "Vase 2.0")
-}
 
 @Preview
 @Composable
 fun DefaultPreview() {
-    MaterialTheme {
-        Column(arrangement = Arrangement.Begin) {
-            Greeting()
-            ButtonRegToken()
-            Connection()
-        }
-    }
+    status.connected = true
+    mainView({})
 }

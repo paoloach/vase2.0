@@ -5,7 +5,7 @@ import androidx.compose.Model
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 
-val TAG = "FirebaseToken";
+private const val TAG = "FirebaseToken";
 
 @Model
 class FirebaseToken(var token:String? =null)
@@ -23,7 +23,7 @@ fun registerToFirebase() {
 
             // Get new Instance ID token
             token.token = task.result?.token
+            token.token?.let { Log.d(TAG, token.token) }
 
-            Log.d(TAG, token.token)
         })
 }
