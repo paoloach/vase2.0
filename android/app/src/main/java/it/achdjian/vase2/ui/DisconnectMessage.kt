@@ -1,17 +1,18 @@
 package it.achdjian.vase2.ui
 
 import androidx.compose.Composable
-import androidx.ui.core.FirstBaseline
 import androidx.ui.core.Text
-import androidx.ui.core.dp
-import androidx.ui.layout.*
+import androidx.ui.layout.Arrangement
+import androidx.ui.layout.Container
+import androidx.ui.layout.LayoutGravity
+import androidx.ui.layout.Row
 import androidx.ui.tooling.preview.Preview
 
 @Composable
 fun DisconnectMessage() {
     Row(arrangement = Arrangement.SpaceBetween) {
-        Text(text = "Disconnected", modifier = Gravity.Center)
-        Container(modifier = Gravity.Center) {
+        Text(text = "Disconnected", modifier = LayoutGravity.Center)
+        Container(modifier = LayoutGravity.Center) {
             RelinkButton()
         }
     }

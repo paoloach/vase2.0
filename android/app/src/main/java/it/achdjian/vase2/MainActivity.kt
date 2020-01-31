@@ -4,10 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.*
+import androidx.compose.Composable
+import androidx.compose.Model
+import androidx.compose.ambient
+import androidx.compose.state
 import androidx.ui.core.ContextAmbient
 import androidx.ui.core.Text
-import androidx.ui.core.dp
 import androidx.ui.core.setContent
 import androidx.ui.graphics.imageFromResource
 import androidx.ui.layout.*
@@ -15,6 +17,7 @@ import androidx.ui.material.AppBarIcon
 import androidx.ui.material.MaterialTheme
 import androidx.ui.material.TopAppBar
 import androidx.ui.tooling.preview.Preview
+import androidx.ui.unit.dp
 import it.achdjian.vase2.ui.ActualStatus
 import it.achdjian.vase2.ui.ConnectionMessage
 
@@ -26,7 +29,7 @@ class Status {
     var actualSoil = 123
 }
 
-val relink=+state { false }
+val relink = state { false }
 
 @Model
 object resumed {
@@ -81,22 +84,16 @@ fun mainView(
 ) {
     MaterialTheme {
 
-        FlexColumn(crossAxisAlignment = CrossAxisAlignment.Stretch) {
-            inflexible {
-                topBar(showPreferences = showPreferences)
-            }
-            inflexible {
-                Padding(top=16.dp) {
+        Column() {
+            topBar(showPreferences = showPreferences)
+            Padding(top = 16.dp) {
 
-                    ConnectionMessage()
-                }
+                ConnectionMessage()
             }
-            inflexible {
-                if (status.connected) {
-                    Padding(top=16.dp) {
+            if (status.connected) {
+                Padding(top = 16.dp) {
 
-                        ActualStatus()
-                    }
+                    ActualStatus()
                 }
             }
         }
@@ -106,7 +103,7 @@ fun mainView(
 
 @Composable
 fun topBar(showPreferences: () -> Unit) {
-    val context = +ambient(ContextAmbient)
+    val context = ambient(ContextAmbient)
     val navigationImage by lazy {
         {
             imageFromResource(
@@ -115,7 +112,7 @@ fun topBar(showPreferences: () -> Unit) {
             )
         }
     }
-    Container(MaxHeight(30.dp)) {
+    Container(LayoutHeight.Max(30.dp)) {
         TopAppBar(
             title = { Text("Vase2..0") },
             actionData = listOf(navigationImage())

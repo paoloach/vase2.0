@@ -4,12 +4,15 @@ import android.util.Log
 import androidx.compose.Composable
 import androidx.compose.Model
 import androidx.compose.state
-import androidx.compose.unaryPlus
-import androidx.ui.core.*
+import androidx.ui.core.Text
+import androidx.ui.core.TextField
 import androidx.ui.input.KeyboardType
-import androidx.ui.layout.*
+import androidx.ui.layout.LayoutWidth
+import androidx.ui.layout.Padding
+import androidx.ui.layout.Row
 import androidx.ui.material.MaterialTheme
 import androidx.ui.tooling.preview.Preview
+import androidx.ui.unit.dp
 
 @Model
 data class IP(var octects: Array<Int> = arrayOf(255, 255, 255, 255))
@@ -30,11 +33,11 @@ fun Ip() {
     Padding(left = 16.dp, right = 16.dp) {
         Row {
             viewOctet(0)
-            Text(text = ".", modifier = Width(5.dp))
+            Text(text = ".", modifier = LayoutWidth.Max(5.dp))
             viewOctet(1)
-            Text(text = ".", modifier = Width(5.dp))
+            Text(text = ".", modifier = LayoutWidth.Max(5.dp))
             viewOctet(2)
-            Text(text = ".", modifier = Width(5.dp))
+            Text(text = ".", modifier = LayoutWidth.Max(5.dp))
             viewOctet(3)
         }
     }
@@ -42,9 +45,9 @@ fun Ip() {
 
 @Composable
 fun viewOctet(index:Int){
-    val state  = + state { vaseIp.octects[index]}
+    val state  = state { vaseIp.octects[index]}
     TextField(value = state.value.toString(),
-        modifier = Width(30.dp),
+        modifier = LayoutWidth.Max(30.dp),
         onValueChange = {state.value=  octetValidation(it, vaseIp.octects[index])},
         keyboardType= KeyboardType.Number
     )
