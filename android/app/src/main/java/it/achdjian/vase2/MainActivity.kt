@@ -33,6 +33,14 @@ object resumed {
     var triggered = true
 }
 
+@Model
+object update {
+    var soil = false
+    fun updateAll() {
+        soil=true
+    }
+}
+
 val status = Status()
 
 class MainActivity : AppCompatActivity() {
@@ -70,6 +78,10 @@ fun mainContent(
     if (resumed.triggered) {
         about()
         resumed.triggered = false
+    }
+    if (update.soil){
+        actualSoil()
+        update.soil=false
     }
     mainView(showPreferences)
 

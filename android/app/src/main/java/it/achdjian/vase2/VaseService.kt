@@ -40,7 +40,7 @@ fun about() {
 
             Log.i(TAG, "Check service at $url")
             vaseService = checkService(url)
-            actualSoil()
+            update.soil=true
             status.connected = vaseService != null
         }
 
@@ -48,20 +48,24 @@ fun about() {
 }
 
 @Composable
-suspend fun actualSoil() {
+fun actualSoil() {
     vaseService?.let {service->
-        withContext(Dispatchers.IO) {
-            val response = service.soil().execute()
-            if (response.isSuccessful){
-                val responseBody = response.body()?.string()
-                Log.i(TAG,"soil response: $responseBody")
-                responseBody?.let {
-                    withContext(Dispatchers.Main) { 
-                        status.actualSoil = it.toInt()
+        GlobalScope.launch(handler) {
+            withContext(Dispatchers.IO) {
+                val response = service.soil().execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body()?.string()
+                    Log.i(TAG, "soil response: $responseBody")
+                    responseBody?.let {
+                        withContext(Dispatchers.Main) {
+                            if (it.startsWith("soilMoisture:")) {
+                                status.actualSoil = it.substring(14).filter {c->c.isDigit() }.toInt()
+                            }
+                        }
                     }
+                } else {
+                    vaseService = null
                 }
-            } else {
-                vaseService=null
             }
         }
     }
