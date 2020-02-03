@@ -6,6 +6,10 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 29
 
+    lintOptions {
+        warning 'InvalidPackage'
+    }
+
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
         applicationId "it.achdjian.vase2"
