@@ -22,6 +22,10 @@ android {
 
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion "0.1.0-dev04"
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -54,8 +58,6 @@ android {
 dependencies {
 
 
-    def nav_version = "2.1.0"
-    def rxandroid_version="2.1.1"
     def retrofit_version="2.7.1"
     def compose_version="0.1.0-dev04"
 

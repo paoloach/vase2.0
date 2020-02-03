@@ -7,7 +7,7 @@ import androidx.ui.tooling.preview.Preview
 
 @Composable
 fun ConnectMessage() {
-    Row(arrangement = Arrangement.SpaceBetween) {
+    Row(arrangement = Arrangement.SpaceBetween, modifier = LayoutWidth.Fill) {
         Text(text = "Connected")
         Container() {
             RefreshButton()

@@ -29,7 +29,6 @@ class Status {
     var actualSoil = 123
 }
 
-val relink = state { false }
 
 @Model
 object resumed {
