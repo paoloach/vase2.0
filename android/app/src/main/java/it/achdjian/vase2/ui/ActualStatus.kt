@@ -2,17 +2,18 @@ package it.achdjian.vase2.ui
 
 import androidx.compose.Composable
 import androidx.ui.core.Text
-import androidx.ui.core.dp
-import androidx.ui.layout.*
+import androidx.ui.layout.Arrangement
+import androidx.ui.layout.LayoutWidth
+import androidx.ui.layout.Padding
+import androidx.ui.layout.Row
 import androidx.ui.tooling.preview.Preview
+import androidx.ui.unit.dp
 import it.achdjian.vase2.status
 
 @Composable
 fun ActualStatus() {
-    FlexRow(mainAxisAlignment = MainAxisAlignment.SpaceEvenly) {
-        inflexible {
+    Row(modifier = LayoutWidth.Fill,arrangement = Arrangement.SpaceEvenly) {
             ActualSoil()
-        }
     }
 }
 

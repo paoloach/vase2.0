@@ -1,10 +1,10 @@
 package it.achdjian.vase2.ui
 
 import androidx.compose.Composable
-import androidx.ui.core.Alignment
-import androidx.ui.core.Text
-import androidx.ui.core.dp
-import androidx.ui.layout.*
+import androidx.ui.layout.Column
+import androidx.ui.layout.CrossAxisAlignment
+import androidx.ui.layout.FlexColumn
+import androidx.ui.layout.LayoutWidth
 import androidx.ui.tooling.preview.Preview
 import it.achdjian.vase2.status
 
@@ -20,14 +20,10 @@ fun ConnectionMessage() {
 @Preview
 @Composable
 fun previewConnectionMessage() {
-        FlexColumn(crossAxisAlignment= CrossAxisAlignment.Stretch) {
-            inflexible {
+        Column{
                 status.connected = true
                 ConnectionMessage()
-            }
-            inflexible {
                 status.connected = false
                 ConnectionMessage()
-            }
         }
 }

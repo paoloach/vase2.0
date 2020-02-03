@@ -3,7 +3,6 @@ package it.achdjian.vase2
 import android.util.Log
 import androidx.compose.Composable
 import androidx.compose.ambient
-import androidx.compose.unaryPlus
 import androidx.preference.PreferenceManager
 import androidx.ui.core.ContextAmbient
 import kotlinx.coroutines.*
@@ -30,7 +29,7 @@ val handler =
 
 @Composable
 fun about() {
-    val context = +ambient(ContextAmbient)
+    val context = ambient(ContextAmbient)
     val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     val address = sharedPreferences.getString("vase_address", "192.168.1.160")
     val url = "http://$address"

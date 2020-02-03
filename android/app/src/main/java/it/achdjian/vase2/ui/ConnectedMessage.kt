@@ -7,14 +7,10 @@ import androidx.ui.tooling.preview.Preview
 
 @Composable
 fun ConnectMessage() {
-    FlexRow(mainAxisAlignment=MainAxisAlignment.SpaceBetween, crossAxisAlignment = CrossAxisAlignment.Center) {
-        inflexible {
-            Text(text = "Connected")
-        }
-        inflexible {
-            Container() {
-                RefreshButton()
-            }
+    Row(arrangement = Arrangement.SpaceBetween, modifier = LayoutWidth.Fill) {
+        Text(text = "Connected")
+        Container() {
+            RefreshButton()
         }
     }
 }

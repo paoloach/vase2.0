@@ -2,7 +2,6 @@ package it.achdjian.vase2
 
 import android.os.Bundle
 import androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP
-import androidx.appcompat.app.ActionBar.DISPLAY_SHOW_HOME
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 
