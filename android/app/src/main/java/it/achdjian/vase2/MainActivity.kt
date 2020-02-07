@@ -11,6 +11,9 @@ import androidx.compose.state
 import androidx.ui.core.ContextAmbient
 import androidx.ui.core.Text
 import androidx.ui.core.setContent
+import androidx.ui.foundation.Border
+import androidx.ui.foundation.shape.RectangleShape
+import androidx.ui.graphics.Color
 import androidx.ui.graphics.imageFromResource
 import androidx.ui.layout.*
 import androidx.ui.material.AppBarIcon
@@ -20,6 +23,10 @@ import androidx.ui.tooling.preview.Preview
 import androidx.ui.unit.dp
 import it.achdjian.vase2.ui.ActualStatus
 import it.achdjian.vase2.ui.ConnectionMessage
+import it.achdjian.vase2.ui.PeriodPicker
+import it.achdjian.vase2.ui.graphics.Graphics
+import it.achdjian.vase2.ui.graphics.Samples
+import it.achdjian.vase2.ui.graphics.test
 
 private const val TAG = "Main"
 
@@ -39,7 +46,7 @@ object resumed {
 object update {
     var soil = false
     fun updateAll() {
-        soil=true
+        soil = true
     }
 }
 
@@ -81,9 +88,9 @@ fun mainContent(
         about()
         resumed.triggered = false
     }
-    if (update.soil){
+    if (update.soil) {
         actualSoil()
-        update.soil=false
+        update.soil = false
     }
     mainView(showPreferences)
 
@@ -102,10 +109,18 @@ fun mainView(
                 ConnectionMessage()
             }
             if (status.connected) {
-                Padding(top = 16.dp) {
-
-                    ActualStatus()
+                ActualStatus()
+                PeriodPicker()
+                Row(){
+                    Text(modifier = LayoutPadding(16.dp),text = "Element size: ")
+                    Text(modifier = LayoutPadding(16.dp), text="${Samples.data.size}")
                 }
+                Row( Border(shape = RectangleShape, width = 1.dp, color = Color.Black)+LayoutWidth.Fill + LayoutHeight.Fill){
+                    val data = Samples.data
+                    val soilData = data.map { it.ts to it.soil }.toMap()
+                    Graphics(soilData)
+                }
+
             }
         }
     }
