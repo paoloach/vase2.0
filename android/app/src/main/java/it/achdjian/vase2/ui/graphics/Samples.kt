@@ -8,5 +8,5 @@ data class Sample(var ts: Long, var temperature: Int, var huidity:Int, var soil:
 
 @Model
 object Samples {
-    var data = listOf<Sample>()
+    var data = listOf<Sample?>()
 }

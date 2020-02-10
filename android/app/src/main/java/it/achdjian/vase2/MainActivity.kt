@@ -116,7 +116,8 @@ fun mainView(
                     Text(modifier = LayoutPadding(16.dp), text="${Samples.data.size}")
                 }
                 Row( Border(shape = RectangleShape, width = 1.dp, color = Color.Black)+LayoutWidth.Fill + LayoutHeight.Fill){
-                    val data = Samples.data
+                    val data = Samples.data.filterNotNull().filter { it.soil < 3000 }
+
                     val soilData = data.map { it.ts to it.soil }.toMap()
                     Graphics(soilData)
                 }
