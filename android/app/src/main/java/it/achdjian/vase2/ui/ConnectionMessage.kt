@@ -2,9 +2,6 @@ package it.achdjian.vase2.ui
 
 import androidx.compose.Composable
 import androidx.ui.layout.Column
-import androidx.ui.layout.CrossAxisAlignment
-import androidx.ui.layout.FlexColumn
-import androidx.ui.layout.LayoutWidth
 import androidx.ui.tooling.preview.Preview
 import it.achdjian.vase2.status
 

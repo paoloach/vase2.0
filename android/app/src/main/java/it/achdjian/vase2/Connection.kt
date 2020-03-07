@@ -7,8 +7,8 @@ import androidx.compose.state
 import androidx.ui.core.Text
 import androidx.ui.core.TextField
 import androidx.ui.input.KeyboardType
+import androidx.ui.layout.LayoutPadding
 import androidx.ui.layout.LayoutWidth
-import androidx.ui.layout.Padding
 import androidx.ui.layout.Row
 import androidx.ui.material.MaterialTheme
 import androidx.ui.tooling.preview.Preview
@@ -30,8 +30,7 @@ var vaseIp = IP()
 @Composable
 fun Ip() {
 
-    Padding(left = 16.dp, right = 16.dp) {
-        Row {
+        Row (modifier = LayoutPadding(left = 16.dp, right = 16.dp)){
             viewOctet(0)
             Text(text = ".", modifier = LayoutWidth.Max(5.dp))
             viewOctet(1)
@@ -40,7 +39,6 @@ fun Ip() {
             Text(text = ".", modifier = LayoutWidth.Max(5.dp))
             viewOctet(3)
         }
-    }
 }
 
 @Composable
